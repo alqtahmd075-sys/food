@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>اتصل بنا — مطعم النجوم</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<nav class="navbar"><div class="nav-inner">
+  <a class="brand" href="index.html"><span class="logo">⭐</span><span>مطعم النجوم<small>STARS RESTAURANT</small></span></a>
+  <div class="nav-tabs">
+    <a href="index.html">الرئيسية</a>
+    <a href="menu.html">المنيو</a>
+    <a href="trays.html">الصواني</a>
+    <a href="offers.html">العروض</a>
+    <a href="gallery.html">المعرض</a>
+    <a href="reservations.html">احجز طاولة</a>
+    <a href="order.html">اطلب الآن</a>
+    <a href="faq.html">الأسئلة الشائعة</a>
+    <a href="contact.html">اتصل بنا</a>
+    <a href="admin.html">لوحة التحكم</a>
+  </div>
+  <a class="nav-cta" href="order.html"><i class="fas fa-cart-shopping"></i> السلة <span class="cart-badge">0</span></a>
+</div></nav>
+
+<section class="section">
+  <div class="container">
+    <div class="section-title"><h2>اتصل بنا</h2><p>إسئلتك أو حجزك وصلنا في ثواني</p></div>
+    <div class="info-cards" style="margin-bottom:44px">
+      <div class="info-card"><div class="ico"><i class="fas fa-location-dot"></i></div><h3>العنوان</h3><p>الكورنيش — أمام النيل، القاهرة</p></div>
+      <div class="info-card"><div class="ico"><i class="fas fa-phone-volume"></i></div><h3>رقم الهاتف</h3><a href="tel:0120202003" class="phone-number">0120202003</a></div>
+      <div class="info-card"><div class="ico"><i class="fas fa-clock"></i></div><h3>ساعات العمل</h3><p>يومياً من 12 ظهراً — 2 بعد منتصف الليل</p></div>
+    </div>
+
+    <div class="panel" style="max-width:760px;margin:0 auto">
+      <h3><i class="fas fa-envelope" style="color:var(--accent)"></i> ابعتلنا رسالة</h3>
+      <div class="form-grid">
+        <div><label>الاسم *</label><input id="c_name" placeholder="اسمك"></div>
+        <div><label>رقم الهاتف</label><input id="c_phone" placeholder="01xxxxxxxxx" style="direction:ltr"></div>
+        <div class="full"><label>البريد الإلكتروني</label><input id="c_email" placeholder="you@mail.com" style="direction:ltr"></div>
+        <div class="full"><label>رسالتك *</label><textarea id="c_msg" rows="4" placeholder="اكتب استفسارك أو طلب الحجز…"></textarea></div>
+      </div>
+      <div class="alert err" id="contactErr" style="margin-top:14px"></div>
+      <div class="alert ok" id="contactOk" style="margin-top:14px"></div>
+      <div style="text-align:center;margin-top:18px">
+        <button class="btn btn-dark" id="contactBtn" style="padding:14px 44px"><i class="fas fa-paper-plane"></i> إرسال الرسالة</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container footer-grid">
+    <div><h4>⭐ مطعم النجوم</h4><p>مطعم المأكولات البحرية الفاخرة.</p></div>
+    <div><h4>روابط سريعة</h4><a href="index.html">الرئيسية</a><a href="menu.html">المنيو</a><a href="order.html">اطلب الآن</a></div>
+    <div><h4>تواصل</h4><a href="tel:0120202003" style="direction:ltr">📞 0120202003</a></div>
+  </div>
+  <div class="copyright">© 2026 مطعم النجوم STARS RESTAURANT</div>
+</footer>
+
+<script src="assets/app.js"></script>
+<script>document.addEventListener('DOMContentLoaded', sfContact);</script>
+</body>
+</html>

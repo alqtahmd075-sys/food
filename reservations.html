@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>احجز طاولة — مطعم النجوم</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<nav class="navbar"><div class="nav-inner">
+  <a class="brand" href="index.html"><span class="logo">⭐</span><span>مطعم النجوم<small>STARS RESTAURANT</small></span></a>
+  <div class="nav-tabs">
+    <a href="index.html">الرئيسية</a>
+    <a href="menu.html">المنيو</a>
+    <a href="trays.html">الصواني</a>
+    <a href="offers.html">العروض</a>
+    <a href="gallery.html">المعرض</a>
+    <a href="reservations.html">احجز طاولة</a>
+    <a href="order.html">اطلب الآن</a>
+    <a href="faq.html">الأسئلة الشائعة</a>
+    <a href="contact.html">اتصل بنا</a>
+    <a href="admin.html">لوحة التحكم</a>
+  </div>
+  <a class="nav-cta" href="order.html"><i class="fas fa-cart-shopping"></i> السلة <span class="cart-badge">0</span></a>
+</div></nav>
+
+<section class="section">
+  <div class="container" style="max-width:760px">
+    <div class="section-title"><h2>احجز طاولتك</h2><p>املأ البيانات وهنتصل بك لتأكيد الحجز</p></div>
+
+    <div class="panel">
+      <div class="form-grid">
+        <div><label>الاسم *</label><input id="r_name" placeholder="اسمك"></div>
+        <div><label>رقم الهاتف *</label><input id="r_phone" placeholder="01xxxxxxxxx" style="direction:ltr"></div>
+        <div><label>عدد الضيوف *</label>
+          <select id="r_guests">
+            <option value="1">شخص واحد</option>
+            <option value="2" selected>شخصان</option>
+            <option value="3">3 أشخاص</option>
+            <option value="4">4 أشخاص</option>
+            <option value="5">5 أشخاص</option>
+            <option value="6">6 أشخاص</option>
+            <option value="8">8+ (عزومة)</option>
+          </select>
+        </div>
+        <div><label>التاريخ *</label><input id="r_date" type="date" style="direction:ltr"></div>
+        <div><label>الوقت *</label>
+          <select id="r_time">
+            <option value="">اختار الوقت…</option>
+            <option>12:00 PM</option><option>1:00 PM</option><option>2:00 PM</option>
+            <option>3:00 PM</option><option>4:00 PM</option><option>5:00 PM</option>
+            <option>6:00 PM</option><option>7:00 PM</option><option>8:00 PM</option>
+            <option>9:00 PM</option><option>10:00 PM</option><option>11:00 PM</option>
+          </select>
+        </div>
+        <div><label>ملاحظات</label><input id="r_notes" placeholder="مناسبة خاصة / طاولة بنافذة…"></div>
+      </div>
+      <div class="alert err" id="resErr" style="margin-top:14px"></div>
+      <div class="alert ok" id="resOk" style="margin-top:14px"></div>
+      <div style="text-align:center;margin-top:18px">
+        <button class="btn btn-dark" id="reserveBtn" style="padding:14px 44px"><i class="fas fa-calendar-check"></i> تأكيد الحجز</button>
+      </div>
+    </div>
+
+    <div class="info-cards">
+      <div class="info-card"><div class="ico"><i class="fas fa-phone-volume"></i></div><h3>حجز هاتفي</h3><p>اتصل على</p><a href="tel:0120202003" class="phone-number">0120202003</a></div>
+      <div class="info-card"><div class="ico"><i class="fas fa-clock"></i></div><h3>مواعيد العمل</h3><p>يومياً 12 ظهراً — 2 بعد منتصف الليل</p></div>
+      <div class="info-card"><div class="ico"><i class="fas fa-users"></i></div><h3>العزومات</h3><p>للحجوزات فوق 8 أشخاص تواصل معنا لحجز القسم الخاص</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container footer-grid">
+    <div><h4>⭐ مطعم النجوم</h4><p>مطعم المأكولات البحرية الفاخرة.</p></div>
+    <div><h4>روابط سريعة</h4><a href="index.html">الرئيسية</a><a href="menu.html">المنيو</a><a href="order.html">اطلب الآن</a></div>
+    <div><h4>تواصل</h4><a href="tel:0120202003" style="direction:ltr">📞 0120202003</a></div>
+  </div>
+  <div class="copyright">© 2026 مطعم النجوم STARS RESTAURANT</div>
+</footer>
+
+<script src="assets/app.js"></script>
+<script>document.addEventListener('DOMContentLoaded', sfReserve);</script>
+</body>
+</html>

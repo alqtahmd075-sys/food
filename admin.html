@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة التحكم — مطعم النجوم</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<nav class="navbar"><div class="nav-inner">
+  <a class="brand" href="index.html"><span class="logo">⭐</span><span>مطعم النجوم<small>STARS RESTAURANT</small></span></a>
+  <div class="nav-tabs">
+    <a href="index.html">الرئيسية</a>
+    <a href="menu.html">المنيو</a>
+    <a href="trays.html">الصواني</a>
+    <a href="offers.html">العروض</a>
+    <a href="gallery.html">المعرض</a>
+    <a href="reservations.html">احجز طاولة</a>
+    <a href="order.html">اطلب الآن</a>
+    <a href="faq.html">الأسئلة الشائعة</a>
+    <a href="contact.html">اتصل بنا</a>
+    <a href="admin.html">لوحة التحكم</a>
+  </div>
+  <a class="nav-cta" href="order.html"><i class="fas fa-cart-shopping"></i> السلة <span class="cart-badge">0</span></a>
+</div></nav>
+
+<section class="section">
+  <div class="container">
+
+    <div id="adminLogin" style="max-width:440px;margin:30px auto" class="panel">
+      <h3 style="text-align:center"><i class="fas fa-lock" style="color:var(--accent)"></i> دخول الإدارة</h3>
+      <p style="text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:18px">admin@stars.com / 123456</p>
+      <label>البريد الإلكتروني</label><input id="a_email" style="direction:ltr">
+      <label style="margin-top:12px">كلمة المرور</label><input id="a_pass" type="password" style="direction:ltr">
+      <p id="adminErr" style="color:var(--danger);font-weight:700;margin-top:10px"></p>
+      <button class="btn btn-dark" id="adminLoginBtn" style="width:100%;margin-top:14px">دخول</button>
+    </div>
+
+    <div id="adminDash" style="display:none">
+      <div class="admin-layout">
+        <aside class="admin-side">
+          <a data-tab="overview" class="active"><i class="fas fa-chart-line"></i> الملخص</a>
+          <a data-tab="orders"><i class="fas fa-receipt"></i> الطلبات</a>
+          <a data-tab="menu"><i class="fas fa-utensils"></i> المنيو</a>
+          <a data-tab="reservations"><i class="fas fa-calendar-check"></i> الحجوزات</a>
+          <a data-tab="messages"><i class="fas fa-inbox"></i> الرسائل</a>
+          <a id="adminLogout"><i class="fas fa-right-from-bracket"></i> تسجيل خروج</a>
+        </aside>
+        <main>
+          <h2 id="tabTitle" style="color:var(--primary-dark);margin-bottom:20px">الملخص</h2>
+          <div id="tab-overview"><div class="stat-cards" id="dashStats"></div></div>
+          <div id="tab-orders" style="display:none"><div class="table-wrap"><table>
+            <thead><tr><th>رقم الطلب</th><th>العميل</th><th>الأصناف</th><th>الإجمالي</th><th>الدفع</th><th>الحالة</th></tr></thead>
+            <tbody id="ordersBody"></tbody></table></div></div>
+          <div id="tab-menu" style="display:none"><div class="table-wrap"><table>
+            <thead><tr><th>الصورة</th><th>الطبق</th><th>القسم</th><th>السعر</th><th>متاح</th><th>إجراءات</th></tr></thead>
+            <tbody id="menuBody"></tbody></table></div></div>
+          <div id="tab-reservations" style="display:none"><div class="table-wrap"><table>
+            <thead><tr><th>الاسم</th><th>الهاتف</th><th>ضيوف</th><th>التاريخ والوقت</th><th>ملاحظات</th><th>الحالة</th></tr></thead>
+            <tbody id="resBody"></tbody></table></div></div>
+          <div id="tab-messages" style="display:none"><div class="table-wrap"><table>
+            <thead><tr><th>الاسم</th><th>التواصل</th><th>الرسالة</th><th>الحالة</th></tr></thead>
+            <tbody id="msgsBody"></tbody></table></div></div>
+        </main>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script src="assets/app.js"></script>
+<script>document.addEventListener('DOMContentLoaded', sfAdmin);</script>
+</body>
+</html>
