@@ -28,12 +28,13 @@ const PAGES = ['index','menu','trays','offers','gallery','reservations','order',
 // الصور: /assets/img/<id> بيدوّر على الملف المحلي (jpg/png/webp...)، ولو مش موجود بيرجّع صورة بديلة بدل ما تبقى مكسورة
 const IMG_DIR = path.join(__dirname, 'assets', 'img');
 const IMG_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif', '.svg'];
+const IMG_MIME = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.avif': 'image/avif', '.gif': 'image/gif', '.svg': 'image/svg+xml' };
 app.get('/assets/img/:id', (req, res, next) => {
   const id = String(req.params.id).replace(/\.[a-z0-9]+$/i, '');
   if (!/^[A-Za-z0-9_-]+$/.test(id)) return next();
   for (const ext of IMG_EXT) {
     const f = path.join(IMG_DIR, id + ext);
-    if (fs.existsSync(f)) return res.sendFile(f, { maxAge: '7d' });
+    if (fs.existsSync(f)) return res.sendFile(f, { maxAge: '7d', headers: { 'Content-Type': IMG_MIME[ext] } });
   }
   res.sendFile(path.join(__dirname, 'assets', 'placeholder.svg'), { headers: { 'Cache-Control': 'no-cache' } });
 });
