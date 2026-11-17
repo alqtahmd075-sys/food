@@ -52,3 +52,7 @@ npm start
 GET `/api/health` — GET `/api/menu` — GET `/api/trays` — GET `/api/offers` — GET `/api/reviews`
 POST `/api/orders` — GET `/api/orders/track/:num` — POST `/api/reservations` — POST `/api/contact`
 POST `/api/auth/login` — POST `/api/register` — GET/PUT/DELETE `/api/admin/...`
+
+## 🌍 عرض الموقع على GitHub Pages (من غير سيرفر)
+الواجهة بتشتغل كمان كنسخة ثابتة: الصور والصفحات بمسارات نسبية مباشرة، والمنيو والصواني والعروض والتقييمات والمعرض بتتحمّل من `assets/data/*.json` لو مفيش سيرفر. (الطلب والحجز والتواصل ولوحة الأدمن محتاجين السيرفر — راجع النشر على Render.)
+لو غيّرت المنيو من لوحة الأدمن، حدّث ملفات `assets/data` من `/api/menu` و`/api/trays` و`/api/offers`.

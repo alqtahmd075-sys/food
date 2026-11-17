@@ -6,13 +6,34 @@
     ? '' : (location.origin.includes('localhost') || location.hostname === '127.0.0.1' ? '' : '')) + '/api';
 
   const token = () => localStorage.getItem('sf_token');
-  const FALLBACK = '/assets/placeholder.svg';
+  const FALLBACK = 'assets/placeholder.svg';
+
+  // نسخة ثابتة من بيانات المنيو والصواني والعروض (assets/data) — بتشتغل لو الموقع اترفع على GitHub Pages من غير سيرفر
+  const STATIC_PATHS = ['/menu', '/menu/categories', '/trays', '/offers', '/reviews', '/images'];
+  async function staticData(path) {
+    const [base, qs] = path.split('?');
+    const q = new URLSearchParams(qs || '');
+    const r = await fetch('assets/data/' + base.replace(/^\//, '').replace(/\//g, '-') + '.json');
+    if (!r.ok) throw new Error('خطأ ' + r.status);
+    const d = await r.json();
+    if (base === '/menu' && Array.isArray(d.data)) {
+      let a = d.data;
+      if (q.get('featured')) a = a.filter((x) => x.featured);
+      if (q.get('category')) a = a.filter((x) => x.category === q.get('category'));
+      return { ...d, data: a };
+    }
+    return d;
+  }
 
   async function api(path, opts = {}) {
     const headers = { ...(opts.headers || {}) };
     if (opts.body) headers['Content-Type'] = 'application/json';
     if (token()) headers['Authorization'] = 'Bearer ' + token();
-    const r = await fetch('/api' + path, { ...opts, headers });
+    const canStatic = (opts.method || 'GET').toUpperCase() === 'GET' && STATIC_PATHS.includes(path.split('?')[0]);
+    let r;
+    try { r = await fetch('api' + path, { ...opts, headers }); }
+    catch (e) { if (canStatic) return staticData(path); throw e; }
+    if (canStatic && (r.status === 404 || r.status === 405 || r.status >= 500)) { try { return await staticData(path); } catch (_) {} }
     let d = {};
     try { d = await r.json(); } catch (_) {}
     if (!r.ok) throw new Error(d.message || 'خطأ ' + r.status);
@@ -21,7 +42,15 @@
 
   const fmt = (n) => Number(n || 0).toLocaleString('ar-EG') + ' ج.م';
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const img = (u) => u || FALLBACK;
+  // امتداد كل صورة موجودة في assets/img — عشان الروابط تبقى مباشرة وبتشتغل على GitHub Pages من غير سيرفر
+  const IMG_FILES = {"enmlJPPk81nSE9zW":".avif","7qmfBsmprwGVdAjt":".jpg","FZBwmx5QmOg3Ydnh":".avif","WQYisSNrHR0b9mBP":".jpg","1euWXOTlKPEklumC":".jpg","CdXi3kDib6fMBcpK":".avif","7cR5OS6o20HvBHXV":".jpg","QBUong5uHq2ImHcg":".jpg","MVWX2jwLWbSnkQ8x":".jpg","GfB8M68XIdiFMlMc":".jpg","0hyP9rejlO6LYKwt":".avif","mbh1mgnIUxf4xpBB":".jpg","HQ28omk0dfzddrA7":".avif","zmzkl8xWxhc6DK0B":".jpg","3fYIzYW9Y5pPaio8":".jpg","DRWiUMvJlJy4nvWS":".avif","1rvYkmtQWTT9kOmg":".jpg","g8b6Qppkn6E64Saw":".avif","lOGfSq11TSOwJ50j":".avif","wMBHrKbeWSpN5YRQ":".jpg","JTD7S0oELlHsuUmm":".avif","F7Obo8fXauXeZskS":".avif","HbohWI5w5AbGcPAu":".jpg","YkZBVsAO0Z6u9Mh2":".jpg","nJslmLzWMCop7BSf":".jpg","LPkWQNdUHda6Rvxb":".jpg","68XCf2g9GsLYVz75":".jpg","OkrgtSuLeHo9MeYx":".jpg","19I4VPwRIgvRdpbh":".jpg","8uUChCWJHM2Coa1i":".jpg","oa9cqyhA2F8e0QKW":".avif"};
+  const img = (u) => {
+    if (!u) return FALLBACK;
+    const m = String(u).match(/^\/?assets\/img\/([A-Za-z0-9_-]+)(\.[a-z0-9]+)?$/i);
+    if (!m) return u;
+    if (IMG_FILES[m[1]]) return 'assets/img/' + m[1] + IMG_FILES[m[1]];
+    return m[2] ? 'assets/img/' + m[1] + m[2] : FALLBACK;
+  };
 
   window.SF = { api, fmt, esc, img, FALLBACK };
 
@@ -109,7 +138,7 @@
       } catch (e) { tp.innerHTML = `<p style="text-align:center;color:var(--danger)">${esc(e.message)}</p>`; }
     }
     const gc = document.getElementById('galleryPreview');
-    if (gc) gc.innerHTML = (await availableGallery()).slice(0, 8).map((u, i) => `<a href="gallery.html"><img loading="lazy" src="${u}" alt="طبق ${i + 1}"></a>`).join('');
+    if (gc) gc.innerHTML = (await availableGallery()).slice(0, 8).map((u, i) => `<a href="gallery.html"><img loading="lazy" src="${img(u)}" alt="طبق ${i + 1}" onerror="this.src=SF.FALLBACK"></a>`).join('');
   };
 
   function dishCard(d) {
@@ -343,7 +372,7 @@
     const grid = document.getElementById('galleryGrid');
     if (!grid) return;
     const GAL = await availableGallery();
-    grid.innerHTML = GAL.map((u, i) => `<a href="${u}" data-lightbox><img loading="lazy" src="${u}" alt="صورة ${i + 1}"></a>`).join('');
+    grid.innerHTML = GAL.map((u, i) => `<a href="${img(u)}" data-lightbox><img loading="lazy" src="${img(u)}" alt="صورة ${i + 1}" onerror="this.src=SF.FALLBACK"></a>`).join('');
     const lb = document.getElementById('sfLightbox');
     const lbImg = document.getElementById('sfLightboxImg');
     grid.querySelectorAll('[data-lightbox]').forEach((a) => a.onclick = (e) => {
