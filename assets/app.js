@@ -36,7 +36,7 @@
     if (canStatic && (r.status === 404 || r.status === 405 || r.status >= 500)) { try { return await staticData(path); } catch (_) {} }
     let d = {};
     try { d = await r.json(); } catch (_) {}
-    if (!r.ok) throw new Error(d.message || 'خطأ ' + r.status);
+    if (!r.ok) { const er = new Error(d.message || 'خطأ ' + r.status); er.status = r.status; throw er; }
     return d;
   }
 
@@ -53,6 +53,34 @@
   };
 
   window.SF = { api, fmt, esc, img, FALLBACK };
+
+  /* ---------- إشعارات الإيميل (بتشتغل حتى من غير سيرفر — مثلاً على GitHub Pages) ---------- */
+  const NOTIFY_EMAIL = 'alqtahmd070@gmail.com';
+  const PHONES = ['01202022003', '01021946722'];
+  const toEn = (v) => String(v || '').replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).trim();
+  const validMobile = (v) => /^(\+?20|0)?1[0125]\d{8}$/.test(toEn(v).replace(/[\s-]/g, ''));
+  // السيرفر مش موجود / مش شغال (GitHub Pages بيرجّع 404 أو 405 على POST)
+  const noBackend = (e) => !e || !e.status || e.status === 404 || e.status === 405 || e.status >= 500;
+
+  async function sendEmail(subject, fields, file) {
+    const fd = new FormData();
+    fd.append('_subject', subject);
+    fd.append('_template', 'table');
+    fd.append('_captcha', 'false');
+    Object.entries(fields).forEach(([k, v]) => { if (v !== undefined && v !== null && String(v) !== '') fd.append(k, String(v)); });
+    if (file) fd.append('attachment', file);
+    const r = await fetch('https://formsubmit.co/ajax/' + NOTIFY_EMAIL, { method: 'POST', headers: { Accept: 'application/json' }, body: fd });
+    let d = {};
+    try { d = await r.json(); } catch (_) {}
+    if (!r.ok || d.success === false || d.success === 'false') throw new Error(d.message || 'تعذّر إرسال الإيميل');
+    return d;
+  }
+  window.SFMail = { sendEmail, NOTIFY_EMAIL, PHONES };
+
+  // طلبات محفوظة على نفس الجهاز (لتتبع الطلب لما مفيش سيرفر)
+  const LOCAL_ORDERS = 'sf_local_orders';
+  const localOrders = () => { try { return JSON.parse(localStorage.getItem(LOCAL_ORDERS) || '[]'); } catch (_) { return []; } };
+  const saveLocalOrder = (o) => { try { const a = localOrders(); a.unshift(o); localStorage.setItem(LOCAL_ORDERS, JSON.stringify(a.slice(0, 30))); } catch (_) {} };
 
   /* ---------- Navbar active tab ---------- */
   document.addEventListener('DOMContentLoaded', () => {
@@ -215,8 +243,8 @@
 
   /* ---------- ORDER page (cart + checkout + track) ---------- */
   const PAY_METHODS = [
-    { id: 'VODAFONE_CASH', label: 'فودافون كاش', icon: 'fa-mobile-screen', info: 'حوّل على رقم 0120202003 وأرسل صورة التحويل واتساب.' },
-    { id: 'VISA', label: 'فيزا / ماستركارد (عند الاستلام)', icon: 'fa-credit-card', info: 'الدفع بالفيزا أو الماستركارد بيتم عند الاستلام عن طريق ماكينة الدفع مع المندوب.' },
+    { id: 'VODAFONE_CASH', label: 'فودافون كاش', icon: 'fa-mobile-screen', info: 'حوّل على رقم ' + PHONES[0] + ' أو ' + PHONES[1] + ' واملى بيانات التحويل.' },
+    { id: 'VISA', label: 'فيزا / ماستركارد', icon: 'fa-credit-card', info: 'ادخل بيانات الكارت وهنتحقق منها — الدفع بيتم عند الاستلام بماكينة POS.' },
     { id: 'CASH', label: 'دفع عند الاستلام', icon: 'fa-money-bill-wave', info: 'ادفع نقداً للمندوب عند وصول الطلب.' },
   ];
   let selectedPay = 'VODAFONE_CASH';
@@ -231,13 +259,90 @@
       pays.querySelectorAll('.pay-option').forEach((el) => el.onclick = () => {
         selectedPay = el.getAttribute('data-p');
         pays.querySelectorAll('.pay-option').forEach((x) => x.classList.toggle('selected', x === el));
+        renderPayPanel();
       });
     }
+    renderPayPanel();
     const btn = document.getElementById('submitOrder');
     if (btn) btn.onclick = submitOrder;
     const tb = document.getElementById('trackBtn');
     if (tb) tb.onclick = trackOrder;
   };
+
+  /* ---------- تبويب الدفع (بيتغير حسب الطريقة المختارة) ---------- */
+  function renderPayPanel() {
+    const box = document.getElementById('payPanel');
+    if (!box) return;
+    if (selectedPay === 'VODAFONE_CASH') {
+      box.innerHTML = `<div class="pay-panel">
+        <h4><i class="fas fa-mobile-screen"></i> بيانات تحويل فودافون كاش</h4>
+        <p class="pay-note">حوّل مبلغ <b class="vcTotal">${fmt(cart.total())}</b> على أي رقم من الرقمين دول، وبعدها املى البيانات اللي تحت عشان نتأكد من التحويل:</p>
+        <div class="pay-numbers"><span dir="ltr">${PHONES[0]}</span><span dir="ltr">${PHONES[1]}</span></div>
+        <div class="form-grid">
+          <div><label>الرقم اللي حوّلت منه *</label><input id="vc_from" inputmode="numeric" placeholder="01xxxxxxxxx" style="direction:ltr"></div>
+          <div><label>رقم العملية (من رسالة التحويل) *</label><input id="vc_ref" placeholder="مثال: 123456789" style="direction:ltr"></div>
+          <div><label>المبلغ المحوّل</label><input id="vc_amount" value="${cart.total()}" readonly style="direction:ltr"></div>
+          <div><label>وقت التحويل</label><input id="vc_time" type="datetime-local" style="direction:ltr"></div>
+          <div class="full"><label>صورة إثبات التحويل (اختياري)</label><input id="vc_file" type="file" accept="image/*"></div>
+        </div>
+        <div class="alert err" id="payErr"></div>
+      </div>`;
+    } else if (selectedPay === 'VISA') {
+      box.innerHTML = `<div class="pay-panel">
+        <h4><i class="fas fa-credit-card"></i> بيانات الفيزا / الماستركارد</h4>
+        <div class="form-grid">
+          <div class="full"><label>الاسم على الكارت *</label><input id="cc_name" placeholder="AHMED MAHMOUD" autocomplete="cc-name" style="direction:ltr;text-transform:uppercase"></div>
+          <div class="full"><label>رقم الكارت *</label><input id="cc_num" inputmode="numeric" maxlength="23" placeholder="0000 0000 0000 0000" autocomplete="cc-number" style="direction:ltr"></div>
+          <div><label>تاريخ الانتهاء *</label><input id="cc_exp" inputmode="numeric" maxlength="5" placeholder="MM/YY" autocomplete="cc-exp" style="direction:ltr"></div>
+          <div><label>رمز الأمان CVV *</label><input id="cc_cvv" inputmode="numeric" maxlength="4" placeholder="123" autocomplete="cc-csc" style="direction:ltr"></div>
+        </div>
+        <p class="pay-note" style="margin-top:12px"><i class="fas fa-lock"></i> بياناتك بتتفحص على جهازك بس، ومش بتتخزن ولا بتتبعت لأي حد. الدفع الفعلي بيتم عند الاستلام بماكينة الفيزا مع المندوب.</p>
+        <div class="alert err" id="payErr"></div>
+      </div>`;
+      const num = document.getElementById('cc_num'), exp = document.getElementById('cc_exp'), cvv = document.getElementById('cc_cvv');
+      num.oninput = () => { num.value = toEn(num.value).replace(/\D/g, '').slice(0, 19).replace(/(.{4})/g, '$1 ').trim(); };
+      exp.oninput = () => { let v = toEn(exp.value).replace(/\D/g, '').slice(0, 4); if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2); exp.value = v; };
+      cvv.oninput = () => { cvv.value = toEn(cvv.value).replace(/\D/g, '').slice(0, 4); };
+    } else {
+      box.innerHTML = `<div class="pay-panel"><p class="pay-note" style="margin:0"><i class="fas fa-money-bill-wave"></i> هتدفع نقداً للمندوب عند وصول الطلب. اضغط «تأكيد الطلب» لتأكيده.</p></div>`;
+    }
+  }
+  function updatePayAmount() {
+    document.querySelectorAll('.vcTotal').forEach((e) => { e.textContent = fmt(cart.total()); });
+    const a = document.getElementById('vc_amount'); if (a) a.value = cart.total();
+  }
+
+  function cardBrand(n) {
+    if (/^4/.test(n)) return 'Visa';
+    if (/^(5[1-5]|2(2[2-9][1-9]|2[3-9]\d|[3-6]\d\d|7[01]\d|720))/.test(n)) return 'Mastercard';
+    return '';
+  }
+  function luhn(n) {
+    let sum = 0, alt = false;
+    for (let i = n.length - 1; i >= 0; i--) { let d = +n[i]; if (alt) { d *= 2; if (d > 9) d -= 9; } sum += d; alt = !alt; }
+    return n.length > 0 && sum % 10 === 0;
+  }
+  // بيرجّع { errors: [...], brand, last4 } — ومش بيخزّن رقم الكارت
+  function validateCard() {
+    const errors = [];
+    const name = (document.getElementById('cc_name').value || '').trim();
+    const num = toEn(document.getElementById('cc_num').value).replace(/\D/g, '');
+    const exp = toEn(document.getElementById('cc_exp').value);
+    const cvv = toEn(document.getElementById('cc_cvv').value);
+    if (name.replace(/[^A-Za-z؀-ۿ]/g, '').length < 3) errors.push('اكتب الاسم الموجود على الكارت');
+    const brand = cardBrand(num);
+    if (!brand) errors.push('رقم الكارت لازم يكون فيزا أو ماستركارد');
+    else if (num.length !== 16 && !(brand === 'Visa' && (num.length === 13 || num.length === 19))) errors.push('رقم الكارت ناقص أو زيادة');
+    else if (!luhn(num)) errors.push('رقم الكارت غير صحيح — راجعه تاني');
+    const m = /^(\d{2})\/(\d{2})$/.exec(exp);
+    if (!m || +m[1] < 1 || +m[1] > 12) errors.push('تاريخ الانتهاء غير صحيح (الشكل MM/YY)');
+    else {
+      const now = new Date(), y = 2000 + +m[2];
+      if (y < now.getFullYear() || (y === now.getFullYear() && +m[1] < now.getMonth() + 1)) errors.push('الكارت منتهي الصلاحية');
+    }
+    if (!/^\d{3,4}$/.test(cvv) || (brand && cvv.length !== 3)) errors.push('رمز الأمان CVV غير صحيح (3 أرقام)');
+    return { errors, brand, last4: num.slice(-4) };
+  }
 
   function renderCart() {
     const box = document.getElementById('cartBox');
@@ -253,31 +358,91 @@
         <button class="btn-ghost" style="background:none;color:var(--danger);font-weight:800" onclick="SFRemove(${idx})">✕</button>
       </div>`).join('') + `<div class="summary-row total" style="margin-top:14px"><span>الإجمالي</span><b>${fmt(cart.total())}</b></div>`;
     }
+    updatePayAmount();
   }
   window.SFRemove = (idx) => { cart.remove(idx); renderCart(); };
+
+  const showErr = (el, msg) => { el.innerHTML = msg; el.style.display = 'block'; el.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
 
   async function submitOrder() {
     const err = document.getElementById('orderErr');
     const ok = document.getElementById('orderOk');
     err.style.display = 'none'; ok.style.display = 'none';
+    const pe = document.getElementById('payErr'); if (pe) pe.style.display = 'none';
     const name = document.getElementById('o_name').value.trim();
-    const phone = document.getElementById('o_phone').value.trim();
+    const phone = toEn(document.getElementById('o_phone').value);
     const address = document.getElementById('o_address').value.trim();
-    if (!name || !phone || !address) { err.textContent = 'أدخل الاسم ورقم الهاتف والعنوان'; err.style.display = 'block'; return; }
-    const items = cart.get().map((i) => ({ type: i.type, id: i.id, qty: i.qty }));
+    const email = document.getElementById('o_email').value.trim();
+    const cartItems = cart.get();
+    if (!name || !phone || !address) return showErr(err, 'أدخل الاسم ورقم الهاتف والعنوان');
+    if (!validMobile(phone)) return showErr(err, 'رقم الهاتف غير صحيح — لازم رقم موبايل مصري (مثال: 01012345678)');
+    if (!cartItems.length) return showErr(err, 'السلة فاضية — اختر أطباقك أولاً');
+
+    // ---- بيانات الدفع ----
+    let payNote = '', payFields = {}, proofFile = null;
+    if (selectedPay === 'VODAFONE_CASH') {
+      const from = toEn(document.getElementById('vc_from').value), ref = toEn(document.getElementById('vc_ref').value);
+      const time = document.getElementById('vc_time').value;
+      const f = document.getElementById('vc_file').files[0];
+      const errs = [];
+      if (!validMobile(from)) errs.push('اكتب الرقم اللي حوّلت منه (رقم موبايل صحيح)');
+      if (ref.replace(/\s/g, '').length < 6) errs.push('اكتب رقم العملية من رسالة التحويل (6 أرقام/حروف على الأقل)');
+      if (f && (!/^image\//.test(f.type) || f.size > 5 * 1024 * 1024)) errs.push('صورة الإثبات لازم تكون صورة أقل من 5 ميجا');
+      if (errs.length) return showErr(pe || err, errs.join('<br>'));
+      proofFile = f || null;
+      payNote = `فودافون كاش — محوّل من ${from} — رقم العملية ${ref}${time ? ' — وقت التحويل ' + time.replace('T', ' ') : ''} — المبلغ ${cart.total()} ج.م`;
+      payFields = { 'Vodafone Cash - from / حوّل من': from, 'Transaction ID / رقم العملية': ref, 'Transfer time / وقت التحويل': time ? time.replace('T', ' ') : '' };
+    } else if (selectedPay === 'VISA') {
+      const v = validateCard();
+      if (v.errors.length) return showErr(pe || err, '❌ البيانات غير صحيحة:<br>' + v.errors.join('<br>'));
+      payNote = `فيزا/ماستركارد عند الاستلام — ${v.brand} ينتهي بـ ${v.last4} (تم التحقق من صحة البيانات، ولم تُحفظ بيانات الكارت)`;
+      payFields = { 'Card / الكارت': v.brand + ' ****' + v.last4 };
+    }
+    const userNotes = document.getElementById('o_notes').value.trim();
+    const notes = [userNotes, payNote].filter(Boolean).join(' | ');
+
+    const btn = document.getElementById('submitOrder');
+    btn.disabled = true;
+    const items = cartItems.map((i) => ({ type: i.type, id: i.id, qty: i.qty }));
+    let order = null, apiOk = false;
     try {
       const r = await api('/orders', { method: 'POST', body: JSON.stringify({
-        customer: { name, phone, email: document.getElementById('o_email').value.trim(), address },
-        notes: document.getElementById('o_notes').value.trim(),
-        items, paymentMethod: selectedPay,
+        customer: { name, phone, email, address }, notes, items, paymentMethod: selectedPay,
       }) });
-      cart.clear();
-      const o = r.data;
-      ok.style.display = 'block';
-      ok.innerHTML = `✅ تم استلام طلبك بنجاح!<br>رقم الطلب: <b style="font-size:1.3rem;direction:ltr;display:inline-block">${esc(o.order_number)}</b> — الإجمالي: <b>${fmt(o.total)}</b><br><small>احفظ رقم الطلب لتتبعه من القسم اللي تحت 👇</small>`;
-      ok.scrollIntoView({ behavior: 'smooth' });
-      renderCart();
-    } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+      order = r.data; apiOk = true;
+    } catch (e) {
+      if (!noBackend(e)) { btn.disabled = false; return showErr(err, esc(e.message)); }
+    }
+    if (!order) {
+      // مفيش سيرفر: بنعمل رقم طلب ونبعته على الإيميل، ونحفظ نسخة على الجهاز عشان التتبع
+      order = {
+        order_number: 'ST-' + Math.random().toString(36).slice(2, 6).toUpperCase() + Date.now().toString().slice(-4),
+        total: cart.total(), order_status: 'PENDING', payment_status: 'PENDING', payment_method: selectedPay,
+        items: cartItems.map((i) => ({ name: i.name, price: i.price, qty: i.qty })), created_at: new Date().toISOString(),
+      };
+    }
+    const payLabel = (PAY_METHODS.find((p) => p.id === selectedPay) || {}).label;
+    let emailOk = true;
+    try {
+      await sendEmail('🛒 طلب جديد ' + order.order_number + ' — ' + name, {
+        'Order No / رقم الطلب': order.order_number,
+        'Name / الاسم': name, 'Phone / الهاتف': phone, 'Email / الإيميل': email, 'Address / العنوان': address,
+        'Items / الأصناف': cartItems.map((i) => i.name + ' ×' + i.qty + ' = ' + (i.price * i.qty) + ' ج.م').join(' | '),
+        'Total / الإجمالي': order.total + ' ج.م', 'Payment / الدفع': payLabel,
+        ...payFields, 'Notes / ملاحظات': userNotes, 'Saved in system / محفوظ في السيستم': apiOk ? 'نعم' : 'لا (الإيميل فقط)',
+      }, proofFile);
+    } catch (_) { emailOk = false; }
+
+    btn.disabled = false;
+    if (!apiOk && !emailOk) {
+      return showErr(err, 'تعذّر إرسال طلبك حالياً. جرّب تاني، أو اتصل بينا على <b dir="ltr">' + PHONES.join('</b> أو <b dir="ltr">') + '</b>');
+    }
+    if (!apiOk) saveLocalOrder(order);
+    cart.clear();
+    ok.style.display = 'block';
+    ok.innerHTML = `✅ تم استلام طلبك بنجاح!<br>رقم الطلب: <b style="font-size:1.3rem;direction:ltr;display:inline-block">${esc(order.order_number)}</b> — الإجمالي: <b>${fmt(order.total)}</b><br><small>احفظ رقم الطلب لتتبعه من القسم اللي تحت 👇</small>`;
+    ok.scrollIntoView({ behavior: 'smooth' });
+    renderCart();
   }
 
   async function trackOrder() {
@@ -285,17 +450,20 @@
     const num = document.getElementById('trackNo').value.trim();
     if (!num) return;
     res.innerHTML = '<p style="color:var(--muted)">جاري البحث…</p>';
-    try {
-      const r = await api('/orders/track/' + encodeURIComponent(num));
-      const o = r.data;
-      res.innerHTML = `<div class="track-box" style="margin-top:16px">
+    let o = null, apiErr = null;
+    try { o = (await api('/orders/track/' + encodeURIComponent(num))).data; }
+    catch (e) { apiErr = e; if (noBackend(e) || e.status === 404) o = localOrders().find((x) => x.order_number.toUpperCase() === num.toUpperCase()) || null; }
+    if (!o) {
+      res.innerHTML = `<p style="color:var(--danger);margin-top:10px">${esc((apiErr && apiErr.message && apiErr.status !== 405 && apiErr.status !== 404) ? apiErr.message : 'لا يوجد طلب بهذا الرقم على هذا الجهاز — تأكد من الرقم، أو اتصل بينا على ' + PHONES.join(' / '))}</p>`;
+      return;
+    }
+    res.innerHTML = `<div class="track-box" style="margin-top:16px">
         <div class="summary-row"><span>رقم الطلب</span><b style="direction:ltr">${esc(o.order_number)}</b></div>
         <div class="summary-row"><span>حالة الطلب</span><b><span class="status-pill ${esc(o.order_status)}">${statusAr(o.order_status)}</span></b></div>
         <div class="summary-row"><span>حالة الدفع</span><b>${payAr(o.payment_status)}</b></div>
         <div class="summary-row"><span>الأصناف</span><b>${o.items.map((i) => esc(i.name) + ' ×' + i.qty).join('، ')}</b></div>
         <div class="summary-row total"><span>الإجمالي</span><b>${fmt(o.total)}</b></div>
       </div>`;
-    } catch (e) { res.innerHTML = `<p style="color:var(--danger);margin-top:10px">${esc(e.message)}</p>`; }
   }
   function statusAr(s) { return { PENDING: 'قيد المراجعة', CONFIRMED: 'تم التأكيد', PROCESSING: 'جاري التحضير', COMPLETED: 'تم التسليم', CANCELLED: 'ملغي' }[s] || s; }
   function payAr(s) { return { PENDING: 'لم يتم الدفع بعد', PAID: 'مدفوع ✅', REFUNDED: 'تم الإرجاع' }[s] || s; }
@@ -311,13 +479,22 @@
       const name = document.getElementById('c_name').value.trim();
       const message = document.getElementById('c_msg').value.trim();
       if (!name || message.length < 5) { err.textContent = 'أدخل الاسم ورسالة لا تقل عن 5 أحرف'; err.style.display = 'block'; return; }
+      const email = document.getElementById('c_email').value.trim(), phone = document.getElementById('c_phone').value.trim();
+      btn.disabled = true;
+      let apiOk = false, msg = 'تم استلام رسالتك بنجاح ✅ هنتواصل معاك قريباً';
       try {
-        const r = await api('/contact', { method: 'POST', body: JSON.stringify({
-          name, email: document.getElementById('c_email').value.trim(), phone: document.getElementById('c_phone').value.trim(), message,
-        }) });
-        ok.textContent = r.message; ok.style.display = 'block';
-        ['c_name', 'c_email', 'c_phone', 'c_msg'].forEach((id) => document.getElementById(id).value = '');
-      } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+        const r = await api('/contact', { method: 'POST', body: JSON.stringify({ name, email, phone, message }) });
+        apiOk = true; msg = r.message || msg;
+      } catch (e) {
+        if (!noBackend(e)) { btn.disabled = false; err.textContent = e.message; err.style.display = 'block'; return; }
+      }
+      let emailOk = true;
+      try { await sendEmail('✉️ رسالة جديدة من الموقع — ' + name, { 'Name / الاسم': name, 'Email / الإيميل': email, 'Phone / الهاتف': phone, 'Message / الرسالة': message }); }
+      catch (_) { emailOk = false; }
+      btn.disabled = false;
+      if (!apiOk && !emailOk) { err.innerHTML = 'تعذّر إرسال رسالتك حالياً. جرّب تاني أو اتصل بينا على <b dir="ltr">' + PHONES.join('</b> أو <b dir="ltr">') + '</b>'; err.style.display = 'block'; return; }
+      ok.textContent = msg; ok.style.display = 'block';
+      ['c_name', 'c_email', 'c_phone', 'c_msg'].forEach((id) => document.getElementById(id).value = '');
     };
   };
 
@@ -415,13 +592,27 @@
       const date = document.getElementById('r_date').value;
       const time = document.getElementById('r_time').value;
       if (!name || !phone || !date || !time) { err.textContent = 'أدخل الاسم والهاتف والتاريخ والوقت'; err.style.display = 'block'; return; }
+      if (!validMobile(phone)) { err.textContent = 'رقم الهاتف غير صحيح — لازم رقم موبايل مصري (مثال: 01012345678)'; err.style.display = 'block'; return; }
+      const guests = document.getElementById('r_guests').value, notes = document.getElementById('r_notes').value.trim();
+      btn.disabled = true;
+      let apiOk = false, msg = 'تم استلام حجزك ✅ هنتصل بك لتأكيد الطاولة';
       try {
-        const r = await api('/reservations', { method: 'POST', body: JSON.stringify({
-          name, phone, guests: document.getElementById('r_guests').value, date, time, notes: document.getElementById('r_notes').value.trim(),
-        }) });
-        ok.textContent = r.message; ok.style.display = 'block';
-        err.style.display = 'none';
-      } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+        const r = await api('/reservations', { method: 'POST', body: JSON.stringify({ name, phone: toEn(phone), guests, date, time, notes }) });
+        apiOk = true; msg = r.message || msg;
+      } catch (e) {
+        if (!noBackend(e)) { btn.disabled = false; err.textContent = e.message; err.style.display = 'block'; return; }
+      }
+      let emailOk = true;
+      try {
+        await sendEmail('🍽️ حجز طاولة جديد — ' + name, {
+          'Name / الاسم': name, 'Phone / الهاتف': toEn(phone), 'Guests / عدد الضيوف': guests, 'Date / التاريخ': date, 'Time / الوقت': time,
+          'Notes / ملاحظات': notes, 'Saved in system / محفوظ في السيستم': apiOk ? 'نعم' : 'لا (الإيميل فقط)',
+        });
+      } catch (_) { emailOk = false; }
+      btn.disabled = false;
+      if (!apiOk && !emailOk) { err.innerHTML = 'تعذّر إرسال حجزك حالياً. جرّب تاني أو اتصل بينا على <b dir="ltr">' + PHONES.join('</b> أو <b dir="ltr">') + '</b>'; err.style.display = 'block'; return; }
+      ok.textContent = msg; ok.style.display = 'block';
+      err.style.display = 'none';
     };
   };
 

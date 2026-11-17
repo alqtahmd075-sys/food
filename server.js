@@ -121,7 +121,7 @@ app.get('/api/trays', async (_req, res) => {
 });
 
 // ---------------- ORDERS ----------------
-const PAY_METHODS = { CASH: 'الدفع عند الاستلام', VODAFONE_CASH: 'فودافون كاش 0120202003', VISA: 'فيزا / ماستركارد عند الاستلام (ماكينة POS)' };
+const PAY_METHODS = { CASH: 'الدفع عند الاستلام', VODAFONE_CASH: 'فودافون كاش 01202022003 / 01021946722', VISA: 'فيزا / ماستركارد عند الاستلام (ماكينة POS)' };
 
 app.post('/api/orders', async (req, res) => {
   const { customer = {}, items = [], paymentMethod = 'CASH', notes } = req.body || {};

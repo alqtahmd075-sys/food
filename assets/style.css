@@ -171,3 +171,12 @@ footer{background:var(--primary-dark);color:#9fb8c8;padding:50px 0 0;margin-top:
 /* وصف الصورة تحت الصورة */
 .img-cap{margin:0;padding:10px 20px;font-size:.84rem;line-height:1.7;color:var(--muted);background:rgba(0,0,0,.03);border-bottom:1px solid rgba(0,0,0,.06)}
 .img-cap i{color:var(--teal);margin-inline-end:6px}
+
+/* ---------- تبويب بيانات الدفع ---------- */
+.pay-panel{margin-top:18px;padding:20px;border:2px solid rgba(212,168,67,.45);border-radius:var(--radius-sm);background:rgba(212,168,67,.06);}
+.pay-panel h4{font-size:1.05rem;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.pay-panel h4 i{color:var(--accent);}
+.pay-note{color:var(--muted);font-size:.92rem;line-height:1.8;margin-bottom:12px;}
+.pay-numbers{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+.pay-numbers span{background:var(--primary);color:#fff;font-weight:800;font-size:1.05rem;padding:8px 18px;border-radius:50px;letter-spacing:.5px;}
+.pay-panel .alert{margin:14px 0 0;}
