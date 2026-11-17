@@ -3,10 +3,17 @@ services:
     name: stars-restaurant
     runtime: node
     plan: free
-    buildCommand: npm install
+    # npm run images: بيحمّل أي صور ناقصة (لو الصور مرفوعة في الريبو بيتخطاها). مش بيوقف البناء لو فشل.
+    buildCommand: npm install && npm run images
     startCommand: npm start
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: "22"
       - key: JWT_SECRET
         generateValue: true
+      # قاعدة بيانات دائمة مجانية (Turso) — راجع README. من غيرهم الداتا بتتمسح مع كل إعادة تشغيل.
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false

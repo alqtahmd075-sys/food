@@ -1,12 +1,13 @@
 {
   "name": "stars-restaurant",
-  "version": "2.0.0",
-  "description": "مطعم النجوم للمأكولات البحرية الفاخرة — STARS RESTAURANT: فرونت إند 10 صفحات + باك إند Express + SQLite",
+  "version": "3.0.0",
+  "description": "مطعم النجوم للمأكولات البحرية الفاخرة — STARS RESTAURANT: فرونت إند 10 صفحات + باك إند Express + libSQL/SQLite",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "check": "node --check server.js && node --check server/config/database.js && node --check assets/app.js"
+    "check": "node --check server.js && node --check server/config/database.js && node --check assets/app.js && node --check scripts/download-images.js",
+    "images": "node scripts/download-images.js"
   },
   "keywords": [
     "seafood",
@@ -19,13 +20,15 @@
   "author": "STARS Restaurant <alqtahmd070@gmail.com>",
   "license": "ISC",
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=18"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.0",
     "express": "^4.19.0",
+    "express-async-errors": "^3.1.1",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2"
   }
