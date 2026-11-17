@@ -141,6 +141,7 @@ const DISHES = [
   { name:'سوشي سلمون رول', category:'سوشي', price:520, image:IMG('DRWiUMvJlJy4nvWS'), description:'رول سلمون طازج مع أفوكادو وصوص الصويا.' },
   { name:'تشكيلة مقبلات النجوم', category:'مقبلات', price:260, image:IMG('lOGfSq11TSOwJ50j'), description:'تشكيلة مقبلات بحرية: سلطات ومخللات وصوصات.' },
   { name:'شوربة سي فود كريم', category:'مقبلات', price:220, image:IMG('0hyP9rejlO6LYKwt'), description:'شوربة كريم بصدف البحر والجمبري — طبق الشيف المميز.' },
+  { name:'طبق مشكّل بحري فاخر', category:'أسماك', price:690, image:IMG('seafood-mixed-platter'), description:'تشكيلة بحرية فاخرة: لوبستر وسمك مقلي وجمبري وكابوريا — مناسبة للعزومات.' },
 ];
 
 async function seedMenu() {
