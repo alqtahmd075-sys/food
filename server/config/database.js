@@ -212,7 +212,7 @@ async function seedOrders() {
 const OFFERS = [
   { title:'خصم 25% على صينية الوحش', description:'اكسب خصم 25% على صينية الوحش كاملة — عرض محدود لفترة قصيرة.', discount:25, code:'STAR25', image:IMG('68XCf2g9GsLYVz75') },
   { title:'يوم التوأمة — 2×1 على الجمبري', description:'اطلب طبق جمبري بالثوم واحصل على التاني مجاناً كل ثلاثاء.', discount:50, code:'TWIN2', image:IMG('wMBHrKbeWSpN5YRQ') },
-  { title:'عشاء العائلة — توصيل مجاني', description:'توصيل مجاني لأي صينية فوق 5000 جنيه داخل القاهرة والجيزة.', discount:10, code:'FREEDEL', image:IMG('YsdWmuuNWqHqnJJR') },
+  { title:'عشاء العائلة — توصيل مجاني', description:'توصيل مجاني لأي صينية فوق 5000 جنيه داخل القاهرة والجيزة.', discount:10, code:'FREEDEL', image:IMG('shrimp-family-offer') },
   { title:'ليلة السوشي — خصم 20%', description:'خصم 20% على تشكيلة السوشي VIP من الأحد للخميس.', discount:20, code:'SUSHI20', image:IMG('HbohWI5w5AbGcPAu') },
 ];
 
