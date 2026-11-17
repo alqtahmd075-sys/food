@@ -62,14 +62,10 @@
   // السيرفر مش موجود / مش شغال (GitHub Pages بيرجّع 404 أو 405 على POST)
   const noBackend = (e) => !e || !e.status || e.status === 404 || e.status === 405 || e.status >= 500;
 
-  async function sendEmail(subject, fields, file) {
-    const fd = new FormData();
-    fd.append('_subject', subject);
-    fd.append('_template', 'table');
-    fd.append('_captcha', 'false');
-    Object.entries(fields).forEach(([k, v]) => { if (v !== undefined && v !== null && String(v) !== '') fd.append(k, String(v)); });
-    if (file) fd.append('attachment', file);
-    const r = await fetch('https://formsubmit.co/ajax/' + NOTIFY_EMAIL, { method: 'POST', headers: { Accept: 'application/json' }, body: fd });
+  async function sendEmail(subject, fields) {
+    const body = { _subject: subject, _template: 'table', _captcha: 'false' };
+    Object.entries(fields).forEach(([k, v]) => { if (v !== undefined && v !== null && String(v) !== '') body[k] = String(v); });
+    const r = await fetch('https://formsubmit.co/ajax/' + NOTIFY_EMAIL, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body) });
     let d = {};
     try { d = await r.json(); } catch (_) {}
     if (!r.ok || d.success === false || d.success === 'false') throw new Error(d.message || 'تعذّر إرسال الإيميل');
@@ -283,8 +279,8 @@
           <div><label>رقم العملية (من رسالة التحويل) *</label><input id="vc_ref" placeholder="مثال: 123456789" style="direction:ltr"></div>
           <div><label>المبلغ المحوّل</label><input id="vc_amount" value="${cart.total()}" readonly style="direction:ltr"></div>
           <div><label>وقت التحويل</label><input id="vc_time" type="datetime-local" style="direction:ltr"></div>
-          <div class="full"><label>صورة إثبات التحويل (اختياري)</label><input id="vc_file" type="file" accept="image/*"></div>
         </div>
+        <p class="pay-note" style="margin:12px 0 0"><i class="fab fa-whatsapp" style="color:#25D366"></i> ابعت صورة التحويل على واتساب: <a href="https://wa.me/2${PHONES[0]}" target="_blank" rel="noopener" dir="ltr" style="color:var(--primary);font-weight:800;text-decoration:underline">${PHONES[0]}</a></p>
         <div class="alert err" id="payErr"></div>
       </div>`;
     } else if (selectedPay === 'VISA') {
@@ -379,17 +375,14 @@
     if (!cartItems.length) return showErr(err, 'السلة فاضية — اختر أطباقك أولاً');
 
     // ---- بيانات الدفع ----
-    let payNote = '', payFields = {}, proofFile = null;
+    let payNote = '', payFields = {};
     if (selectedPay === 'VODAFONE_CASH') {
       const from = toEn(document.getElementById('vc_from').value), ref = toEn(document.getElementById('vc_ref').value);
       const time = document.getElementById('vc_time').value;
-      const f = document.getElementById('vc_file').files[0];
       const errs = [];
       if (!validMobile(from)) errs.push('اكتب الرقم اللي حوّلت منه (رقم موبايل صحيح)');
       if (ref.replace(/\s/g, '').length < 6) errs.push('اكتب رقم العملية من رسالة التحويل (6 أرقام/حروف على الأقل)');
-      if (f && (!/^image\//.test(f.type) || f.size > 5 * 1024 * 1024)) errs.push('صورة الإثبات لازم تكون صورة أقل من 5 ميجا');
       if (errs.length) return showErr(pe || err, errs.join('<br>'));
-      proofFile = f || null;
       payNote = `فودافون كاش — محوّل من ${from} — رقم العملية ${ref}${time ? ' — وقت التحويل ' + time.replace('T', ' ') : ''} — المبلغ ${cart.total()} ج.م`;
       payFields = { 'Vodafone Cash - from / حوّل من': from, 'Transaction ID / رقم العملية': ref, 'Transfer time / وقت التحويل': time ? time.replace('T', ' ') : '' };
     } else if (selectedPay === 'VISA') {
@@ -430,7 +423,7 @@
         'Items / الأصناف': cartItems.map((i) => i.name + ' ×' + i.qty + ' = ' + (i.price * i.qty) + ' ج.م').join(' | '),
         'Total / الإجمالي': order.total + ' ج.م', 'Payment / الدفع': payLabel,
         ...payFields, 'Notes / ملاحظات': userNotes, 'Saved in system / محفوظ في السيستم': apiOk ? 'نعم' : 'لا (الإيميل فقط)',
-      }, proofFile);
+      });
     } catch (_) { emailOk = false; }
 
     btn.disabled = false;
