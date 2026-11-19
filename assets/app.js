@@ -52,7 +52,10 @@
     return m[2] ? 'assets/img/' + m[1] + m[2] : FALLBACK;
   };
 
-  window.SF = { api, fmt, esc, img, FALLBACK };
+  const REG = {};
+  const reg = (kind, o) => { REG[kind + ':' + o.id] = o; return o; };
+  const detailsBtn = (kind, id) => `<button type="button" class="btn btn-details" data-details="${kind}:${id}" title="التفاصيل" aria-label="التفاصيل"><i class="fas fa-circle-info"></i> التفاصيل</button>`;
+  window.SF = { api, fmt, esc, img, FALLBACK, REG };
 
   /* ---------- إشعارات الإيميل (بتشتغل حتى من غير سيرفر — مثلاً على GitHub Pages) ---------- */
   const NOTIFY_EMAIL = 'alqtahmd070@gmail.com';
@@ -166,6 +169,7 @@
   };
 
   function dishCard(d) {
+    reg('dish', d);
     return `<article class="card">
       <div class="card-media"><img loading="lazy" src="${esc(img(d.image))}" alt="${esc(d.name)}" onerror="this.src=SF.FALLBACK">${d.featured ? '<span class="badge">الأكثر طلباً</span>' : ''}</div>
       <div class="card-body">
@@ -173,12 +177,16 @@
         <h3>${esc(d.name)}</h3>
         <p class="desc">${esc(d.description || '')}</p>
         <div class="price-row"><b>${fmt(d.price)}</b>${d.old_price ? `<s>${fmt(d.old_price)}</s>` : ''}</div>
-        <button class="btn btn-dark" style="width:100%" onclick='SFCart.add("dish", ${d.id}, ${JSON.stringify(d.name)}, ${d.price}, ${JSON.stringify(d.image || '')})'><i class="fas fa-cart-plus"></i> أضف للسلة</button>
+        <div class="card-actions">
+          <button class="btn btn-dark" onclick='SFCart.add("dish", ${d.id}, ${JSON.stringify(d.name)}, ${d.price}, ${JSON.stringify(d.image || '')})'><i class="fas fa-cart-plus"></i> أضف للسلة</button>
+          ${detailsBtn('dish', d.id)}
+        </div>
       </div></article>`;
   }
   window.sfDishCard = dishCard;
 
   function trayCard(t) {
+    reg('tray', t);
     return `<article class="card">
       <div class="card-media"><img loading="lazy" src="${esc(img(t.image))}" alt="${esc(t.name)}" onerror="this.src=SF.FALLBACK"><span class="badge teal">${esc(t.serves || '')}</span></div>
       ${t.image_desc ? `<p class="img-cap"><i class="fas fa-camera"></i> ${esc(t.image_desc)}</p>` : ''}
@@ -187,9 +195,9 @@
         <h3>${esc(t.name)}</h3>
         <p class="desc">${esc(t.subtitle || '')} — تشمل: ${(t.items || []).slice(0, 4).map(esc).join('، ')}${(t.items || []).length > 4 ? '…' : ''}</p>
         <div class="price-row"><b>${fmt(t.price)}</b></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-dark" style="flex:1" onclick='SFCart.add("tray", ${t.id}, ${JSON.stringify(t.name)}, ${t.price}, ${JSON.stringify(t.image || '')})'><i class="fas fa-cart-plus"></i> أضف للسلة</button>
-          <a class="btn btn-teal" href="trays.html" style="padding:13px 18px">التفاصيل</a>
+        <div class="card-actions">
+          <button class="btn btn-dark" onclick='SFCart.add("tray", ${t.id}, ${JSON.stringify(t.name)}, ${t.price}, ${JSON.stringify(t.image || '')})'><i class="fas fa-cart-plus"></i> أضف للسلة</button>
+          ${detailsBtn('tray', t.id)}
         </div>
       </div></article>`;
   }
@@ -222,7 +230,7 @@
     const grid = document.getElementById('traysGrid');
     try {
       const r = await api('/trays');
-      grid.innerHTML = r.data.map((t) => `<article class="card" style="grid-column:span 1">
+      grid.innerHTML = r.data.map((t) => { reg('tray', t); return `<article class="card" style="grid-column:span 1">
         <div class="card-media" style="aspect-ratio:16/9"><img loading="lazy" src="${esc(img(t.image))}" alt="${esc(t.name)}" onerror="this.src=SF.FALLBACK"><span class="badge">${esc(t.serves || '')}</span></div>
         ${t.image_desc ? `<p class="img-cap"><i class="fas fa-camera"></i> ${esc(t.image_desc)}</p>` : ''}
         <div class="card-body">
@@ -232,8 +240,11 @@
             ${(t.items || []).map((i) => `<li><i class="fas fa-check" style="color:var(--teal)"></i> ${esc(i)}</li>`).join('')}
           </ul>
           <div class="price-row"><b style="font-size:1.5rem">${fmt(t.price)}</b></div>
-          <button class="btn btn-dark" style="width:100%" onclick='SFCart.add("tray", ${t.id}, ${JSON.stringify(t.name)}, ${t.price}, ${JSON.stringify(t.image || '')})'><i class="fas fa-cart-plus"></i> اطلب الصينية</button>
-        </div></article>`).join('');
+          <div class="card-actions">
+            <button class="btn btn-dark" onclick='SFCart.add("tray", ${t.id}, ${JSON.stringify(t.name)}, ${t.price}, ${JSON.stringify(t.image || '')})'><i class="fas fa-cart-plus"></i> اطلب الصينية</button>
+            ${detailsBtn('tray', t.id)}
+          </div>
+        </div></article>`; }).join('');
     } catch (e) { grid.innerHTML = `<p style="text-align:center;color:var(--danger)">${esc(e.message)}</p>`; }
   };
 
@@ -543,14 +554,6 @@
     if (!grid) return;
     const GAL = await availableGallery();
     grid.innerHTML = GAL.map((u, i) => `<a href="${img(u)}" data-lightbox><img loading="lazy" src="${img(u)}" alt="صورة ${i + 1}" onerror="this.src=SF.FALLBACK"></a>`).join('');
-    const lb = document.getElementById('sfLightbox');
-    const lbImg = document.getElementById('sfLightboxImg');
-    grid.querySelectorAll('[data-lightbox]').forEach((a) => a.onclick = (e) => {
-      e.preventDefault();
-      lbImg.src = a.getAttribute('href');
-      lb.classList.add('active');
-    });
-    lb.onclick = () => lb.classList.remove('active');
   };
 
   /* ---------- OFFERS page ---------- */

@@ -180,3 +180,45 @@ footer{background:var(--primary-dark);color:#9fb8c8;padding:50px 0 0;margin-top:
 .pay-numbers{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
 .pay-numbers span{background:var(--primary);color:#fff;font-weight:800;font-size:1.05rem;padding:8px 18px;border-radius:50px;letter-spacing:.5px;}
 .pay-panel .alert{margin:14px 0 0;}
+
+/* ===== أزرار الكروت + مشاهد الصور وتفاصيل المنتج ===== */
+.card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.card-actions .btn{flex:1 1 auto;padding:12px 16px;white-space:nowrap}
+.btn-details{background:transparent;color:var(--primary);border:2px solid var(--gold);box-shadow:none;flex:0 0 auto!important}
+.btn-details:hover{background:var(--gold);color:var(--primary-dark)}
+.card-media,[data-lightbox]{cursor:zoom-in}
+body.sfv-open{overflow:hidden}
+.sfv{position:fixed;inset:0;z-index:300;background:rgba(5,10,25,.94);display:flex;align-items:center;justify-content:center;padding:16px}
+.sfv[hidden]{display:none}
+.sfv-body{display:flex;gap:24px;align-items:center;justify-content:center;max-width:1200px;width:100%;max-height:92vh}
+.sfv-stage{margin:0;flex:1 1 auto;min-width:0;text-align:center}
+.sfv-stage img{max-width:100%;max-height:82vh;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.6);opacity:0;transform:scale(.97);transition:opacity .25s,transform .25s;background:#111}
+.sfv-stage img.in{opacity:1;transform:none}
+.sfv-stage figcaption{color:#e8e4d8;margin-top:10px;font-size:.95rem}
+.sfv-info{display:none;flex:0 0 380px;max-height:86vh;overflow:auto;background:#fff;color:var(--text);border-radius:16px;padding:22px}
+.sfv-product .sfv-info{display:block}
+.sfv-info h2{margin:6px 0;color:var(--primary);font-size:1.5rem}
+.sfv-info h3{margin:16px 0 8px;font-size:1rem;color:var(--primary)}
+.sfv-sub{color:var(--muted);margin:0 0 6px}
+.sfv-badge{display:inline-block;background:var(--gold);color:var(--primary-dark);font-weight:800;font-size:.78rem;padding:3px 12px;border-radius:999px}
+.sfv-price{display:flex;gap:10px;align-items:baseline;margin:8px 0}
+.sfv-price b{font-size:1.6rem;color:var(--primary)}.sfv-price s{color:var(--muted)}
+.sfv-desc{line-height:1.8;margin:8px 0}
+.sfv-rows{margin:12px 0;display:grid;gap:6px}
+.sfv-rows div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed #e2dccb;padding:6px 0}
+.sfv-rows dt{color:var(--muted)}.sfv-rows dd{margin:0;font-weight:700}
+.sfv-list{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.sfv-list i{color:var(--gold);margin-inline-end:6px}
+.sfv-add{width:100%;margin-top:16px}
+.sfv-close,.sfv-nav{position:absolute;background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:50%;width:48px;height:48px;font-size:1.2rem;cursor:pointer;z-index:2;transition:background .2s}
+.sfv-close:hover,.sfv-nav:hover{background:rgba(255,255,255,.3)}
+.sfv-close{top:16px;inset-inline-start:16px}
+.sfv-nav{top:50%;transform:translateY(-50%)}
+.sfv-prev{right:14px}.sfv-next{left:14px}
+.sfv-count{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);color:#fff;background:rgba(0,0,0,.45);padding:4px 14px;border-radius:999px;font-size:.9rem}
+@media(max-width:860px){
+  .sfv{padding:8px}.sfv-body{flex-direction:column;overflow:auto;align-items:stretch;gap:12px}
+  .sfv-stage img{max-height:46vh}.sfv-product .sfv-stage img{max-height:38vh}
+  .sfv-info{flex:none;max-height:none}
+  .sfv-nav{width:40px;height:40px;top:30%}.sfv-prev{right:6px}.sfv-next{left:6px}
+}
