@@ -45,7 +45,7 @@
   const fmt = (n) => Number(n || 0).toLocaleString('ar-EG') + ' ج.م';
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   // امتداد كل صورة موجودة في assets/img — عشان الروابط تبقى مباشرة وبتشتغل على GitHub Pages من غير سيرفر
-  const IMG_FILES = {"enmlJPPk81nSE9zW":".avif","7qmfBsmprwGVdAjt":".jpg","FZBwmx5QmOg3Ydnh":".avif","WQYisSNrHR0b9mBP":".jpg","1euWXOTlKPEklumC":".jpg","CdXi3kDib6fMBcpK":".avif","7cR5OS6o20HvBHXV":".jpg","QBUong5uHq2ImHcg":".jpg","MVWX2jwLWbSnkQ8x":".jpg","GfB8M68XIdiFMlMc":".jpg","mbh1mgnIUxf4xpBB":".jpg","HQ28omk0dfzddrA7":".avif","zmzkl8xWxhc6DK0B":".jpg","3fYIzYW9Y5pPaio8":".jpg","DRWiUMvJlJy4nvWS":".avif","1rvYkmtQWTT9kOmg":".jpg","seafood-mixed-platter":".jpg","m8pjRekKYf29HQMQ":".jpg","lOGfSq11TSOwJ50j":".avif","wMBHrKbeWSpN5YRQ":".jpg","JTD7S0oELlHsuUmm":".avif","F7Obo8fXauXeZskS":".avif","HbohWI5w5AbGcPAu":".jpg","YkZBVsAO0Z6u9Mh2":".jpg","nJslmLzWMCop7BSf":".jpg","YsdWmuuNWqHqnJJR":".jpg","LPkWQNdUHda6Rvxb":".jpg","68XCf2g9GsLYVz75":".jpg","OkrgtSuLeHo9MeYx":".jpg","shrimp-family-offer":".jpg","19I4VPwRIgvRdpbh":".jpg","8uUChCWJHM2Coa1i":".jpg","oa9cqyhA2F8e0QKW":".avif"};
+  const IMG_FILES = {"enmlJPPk81nSE9zW":".avif","7qmfBsmprwGVdAjt":".jpg","FZBwmx5QmOg3Ydnh":".avif","WQYisSNrHR0b9mBP":".jpg","1euWXOTlKPEklumC":".jpg","CdXi3kDib6fMBcpK":".avif","7cR5OS6o20HvBHXV":".jpg","GfB8M68XIdiFMlMc":".jpg","HQ28omk0dfzddrA7":".avif","3fYIzYW9Y5pPaio8":".jpg","DRWiUMvJlJy4nvWS":".avif","1rvYkmtQWTT9kOmg":".jpg","seafood-mixed-platter":".jpg","m8pjRekKYf29HQMQ":".jpg","lOGfSq11TSOwJ50j":".avif","wMBHrKbeWSpN5YRQ":".jpg","JTD7S0oELlHsuUmm":".avif","F7Obo8fXauXeZskS":".avif","HbohWI5w5AbGcPAu":".jpg","YkZBVsAO0Z6u9Mh2":".jpg","nJslmLzWMCop7BSf":".jpg","YsdWmuuNWqHqnJJR":".jpg","LPkWQNdUHda6Rvxb":".jpg","68XCf2g9GsLYVz75":".jpg","shrimp-family-offer":".jpg","19I4VPwRIgvRdpbh":".jpg","oa9cqyhA2F8e0QKW":".avif","king-crab":".jpg","grilled-octopus":".jpg","oysters":".jpg","mussels-cream":".jpg","shrimp-tempura":".jpg"};
   const img = (u) => {
     if (!u) return FALLBACK;
     const m = String(u).match(/^\/?assets\/img\/([A-Za-z0-9_-]+)(\.[a-z0-9]+)?$/i);
@@ -506,6 +506,11 @@
 
   /* ---------- GALLERY ---------- */
   const GALLERY = [
+    '/assets/img/king-crab',
+    '/assets/img/grilled-octopus',
+    '/assets/img/oysters',
+    '/assets/img/mussels-cream',
+    '/assets/img/shrimp-tempura',
     '/assets/img/seafood-mixed-platter',
     '/assets/img/shrimp-family-offer',
     '/assets/img/YsdWmuuNWqHqnJJR',
@@ -527,16 +532,10 @@
     '/assets/img/nJslmLzWMCop7BSf',
     '/assets/img/enmlJPPk81nSE9zW',
     '/assets/img/FZBwmx5QmOg3Ydnh',
-    '/assets/img/mbh1mgnIUxf4xpBB',
     '/assets/img/DRWiUMvJlJy4nvWS',
     '/assets/img/HbohWI5w5AbGcPAu',
     '/assets/img/lOGfSq11TSOwJ50j',
-    '/assets/img/MVWX2jwLWbSnkQ8x',
-    '/assets/img/8uUChCWJHM2Coa1i',
     '/assets/img/F7Obo8fXauXeZskS',
-    '/assets/img/OkrgtSuLeHo9MeYx',
-    '/assets/img/zmzkl8xWxhc6DK0B',
-    '/assets/img/QBUong5uHq2ImHcg',
     '/assets/img/JTD7S0oELlHsuUmm',
     '/assets/img/oa9cqyhA2F8e0QKW',
   ];

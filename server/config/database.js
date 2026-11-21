@@ -89,7 +89,7 @@ async function initDB() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL, category TEXT NOT NULL,
       price REAL NOT NULL, old_price REAL,
-      description TEXT, image TEXT,
+      description TEXT, ingredients TEXT DEFAULT '[]', image TEXT,
       available INTEGER DEFAULT 1, featured INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
@@ -140,6 +140,7 @@ async function initDB() {
   `);
   // قواعد قديمة: أضف عمود وصف الصورة لو مش موجود
   if (MODE !== 'postgres') { try { await db.exec('ALTER TABLE trays ADD COLUMN image_desc TEXT'); } catch (_) { /* العمود موجود بالفعل */ } }
+  if (MODE !== 'postgres') { try { await db.exec("ALTER TABLE menu_items ADD COLUMN ingredients TEXT DEFAULT '[]'"); } catch (_) { /* العمود موجود بالفعل */ } }
   await seedAdmin();
   await seedMenu();
   await seedTrays();
@@ -162,6 +163,158 @@ async function seedAdmin() {
   }
 }
 
+const INGREDIENTS = {
+ "لوبستر مشوي فاخر": [
+  "لوبستر طازج",
+  "صوص تاماريند",
+  "أرز بسمتي",
+  "ليمون مشوي"
+ ],
+ "سمك بلطي مشوي على الفحم": [
+  "بلطي طازج",
+  "توابل مصرية",
+  "زيت زيتون",
+  "ليمون"
+ ],
+ "دنيس مشوي محشي": [
+  "دنيس طازج",
+  "بصل",
+  "فلفل ألوان",
+  "شرائح ليمون",
+  "صوص جرمولة"
+ ],
+ "فيليه هامور مشوي": [
+  "فيليه هامور",
+  "زبدة",
+  "ثوم",
+  "ليمون"
+ ],
+ "سيخ جمبري مشوي": [
+  "جمبري جامبو",
+  "خضار مشكلة",
+  "صوص الليمون"
+ ],
+ "تونة مشوية بالليمون": [
+  "ستيك تونة طازج",
+  "صوص تاماريند",
+  "ليمون"
+ ],
+ "فيليه قاروص بالفرن": [
+  "فيليه قاروص",
+  "زبدة",
+  "ثوم",
+  "بطاطس صغيرة محمّرة",
+  "شبت وبقدونس"
+ ],
+ "جمبري مشوي بالثوم": [
+  "جمبري جامبو",
+  "زبدة",
+  "ثوم",
+  "بقدونس",
+  "ليمون"
+ ],
+ "جمبري كاجون حار": [
+  "جمبري",
+  "توابل كاجون حارة",
+  "ثوم",
+  "ليمون"
+ ],
+ "جمبري مقلي كرسبي": [
+  "جمبري",
+  "بقسماط مقرمش",
+  "صوص تارتار",
+  "ليمون"
+ ],
+ "جمبري بالتاماريند": [
+  "جمبري",
+  "صوص تاماريند حلو حار",
+  "ثوم",
+  "بصل أخضر"
+ ],
+ "سبيط مشوي": [
+  "سبيط طازج",
+  "صوص الليمون",
+  "زيتون",
+  "بقدونس"
+ ],
+ "كاليماري مقرمش": [
+  "حلقات كاليماري",
+  "بقسماط",
+  "صوص مارينارا",
+  "ليمون"
+ ],
+ "تشكيلة سوشي VIP": [
+  "24 قطعة سوشي متنوعة",
+  "أرز سوشي",
+  "سمك طازج",
+  "أعشاب نوري",
+  "واسابي وزنجبيل مخلل",
+  "صوص صويا"
+ ],
+ "سوشي سلمون رول": [
+  "سلمون طازج",
+  "أفوكادو",
+  "أرز سوشي",
+  "أعشاب نوري",
+  "صوص صويا"
+ ],
+ "تشكيلة مقبلات النجوم": [
+  "سلطات بحرية",
+  "مخللات",
+  "صوصات متنوعة"
+ ],
+ "شوربة سي فود كريم": [
+  "كريمة",
+  "صدف بحر",
+  "جمبري",
+  "مرقة سمك"
+ ],
+ "طبق مشكّل بحري فاخر": [
+  "لوبستر",
+  "سمك مقلي",
+  "جمبري",
+  "كابوريا",
+  "ليمون وصوصات"
+ ],
+ "أرجل كابوريا ملكية": [
+  "أرجل كابوريا ملكية",
+  "زبدة بالثوم",
+  "ليمون مشوي",
+  "شبت طازج",
+  "ملح بحري"
+ ],
+ "أخطبوط مشوي": [
+  "أخطبوط طازج",
+  "زيت زيتون",
+  "بابريكا مدخنة",
+  "ليمون",
+  "بقدونس",
+  "ملح بحري"
+ ],
+ "محار طازج على الثلج": [
+  "محار طازج",
+  "ثلج مجروش",
+  "ليمون",
+  "صوص ميجنونيت"
+ ],
+ "بلح بحر بصوص الكريمة": [
+  "بلح بحر",
+  "نبيذ أبيض",
+  "ثوم",
+  "كريمة",
+  "بقدونس",
+  "خبز محمص"
+ ],
+ "جمبري تمبورا": [
+  "جمبري جامبو",
+  "عجينة تمبورا",
+  "صوص ياباني",
+  "فجل ياباني مبشور",
+  "ليمون",
+  "ورق شيسو"
+ ]
+};
+
 const DISHES = [
   { name:'لوبستر مشوي فاخر', category:'مشويات بحرية', price:850, featured:1, image:IMG('CdXi3kDib6fMBcpK'), description:'لوبستر طازج مشوي على الفحم مع صوص التاماريند والأرز البسمتي.' },
   { name:'سمك بلطي مشوي على الفحم', category:'مشويات بحرية', price:320, image:IMG('nJslmLzWMCop7BSf'), description:'بلطي طازج متبل بالتوابل المصرية ومشوي على الفحم.' },
@@ -181,14 +334,25 @@ const DISHES = [
   { name:'تشكيلة مقبلات النجوم', category:'مقبلات', price:260, image:IMG('lOGfSq11TSOwJ50j'), description:'تشكيلة مقبلات بحرية: سلطات ومخللات وصوصات.' },
   { name:'شوربة سي فود كريم', category:'مقبلات', price:220, image:IMG('HQ28omk0dfzddrA7'), description:'شوربة كريم بصدف البحر والجمبري — طبق الشيف المميز.' },
   { name:'طبق مشكّل بحري فاخر', category:'أسماك', price:690, image:IMG('seafood-mixed-platter'), description:'تشكيلة بحرية فاخرة: لوبستر وسمك مقلي وجمبري وكابوريا — مناسبة للعزومات.' },
+  { name:'أرجل كابوريا ملكية', category:'قشريات ومحار', price:1250, featured:1, image:IMG('king-crab'), description:'كابوريا ملكية مطهية على البخار مع زبدة الثوم والليمون والشبت.' },
+  { name:'أخطبوط مشوي', category:'سبيط وكاليماري', price:520, image:IMG('grilled-octopus'), description:'أخطبوط طازج مشوي بزيت الزيتون والبابريكا المدخنة والليمون.' },
+  { name:'محار طازج على الثلج', category:'قشريات ومحار', price:780, image:IMG('oysters'), description:'محار طازج يُقدَّم على الثلج مع الليمون وصوص الميجنونيت.' },
+  { name:'بلح بحر بصوص الكريمة', category:'قشريات ومحار', price:340, image:IMG('mussels-cream'), description:'بلح بحر مطهي بالنبيذ الأبيض والثوم والكريمة مع خبز محمص.' },
+  { name:'جمبري تمبورا', category:'جمبري', price:360, image:IMG('shrimp-tempura'), description:'جمبري مقرمش بطبقة التمبورا الذهبية مع صوص ياباني.' },
 ];
 
 async function seedMenu() {
   const c = (await db.prepare('SELECT COUNT(*) AS c FROM menu_items').get()).c;
-  if (c > 0) return;
-  const ins = db.prepare('INSERT INTO menu_items (name, category, price, old_price, description, image, available, featured) VALUES (?,?,?,?,?,?,1,?)');
-  for (const d of DISHES) await ins.run(d.name, d.category, d.price, d.old_price || null, d.description, d.image, d.featured ? 1 : 0);
-  console.log(`🍽️ تم إدخال ${DISHES.length} طبق في المنيو`);
+  if (c === 0) {
+    const ins = db.prepare('INSERT INTO menu_items (name, category, price, old_price, description, ingredients, image, available, featured) VALUES (?,?,?,?,?,?,?,1,?)');
+    for (const d of DISHES) await ins.run(d.name, d.category, d.price, d.old_price || null, d.description, JSON.stringify(INGREDIENTS[d.name] || []), d.image, d.featured ? 1 : 0);
+    console.log(`🍽️ تم إدخال ${DISHES.length} طبق في المنيو`);
+    return;
+  }
+  // قواعد قديمة: املأ المكونات للأطباق اللي ملهاش مكونات (من غير ما نلمس أي طبق أضفته أو عدّلته من الأدمن)
+  for (const [name, list] of Object.entries(INGREDIENTS)) {
+    await db.prepare("UPDATE menu_items SET ingredients = ? WHERE name = ? AND (ingredients IS NULL OR ingredients = '' OR ingredients = '[]')").run(JSON.stringify(list), name);
+  }
 }
 
 const TRAYS = [

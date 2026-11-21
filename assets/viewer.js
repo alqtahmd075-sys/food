@@ -78,6 +78,7 @@
     const rows = [];
     if (kind === 'dish') {
       if (o.category) rows.push(['التصنيف', o.category]);
+      rows.push(['السعر', fmt(o.price)]);
       rows.push(['التوفر', o.available === 0 ? 'غير متاح حالياً' : 'متاح للطلب']);
     } else {
       if (o.serves) rows.push(['تكفي', o.serves.replace(/^تكفي\s*/, '')]);
@@ -91,6 +92,7 @@
       ${o.description ? `<p class="sfv-desc">${esc(o.description)}</p>` : ''}
       ${o.image_desc ? `<p class="sfv-desc"><i class="fas fa-camera"></i> ${esc(o.image_desc)}</p>` : ''}
       <dl class="sfv-rows">${rows.map((r) => `<div><dt>${esc(r[0])}</dt><dd>${esc(r[1])}</dd></div>`).join('')}</dl>
+      ${(Array.isArray(o.ingredients) && o.ingredients.length) ? `<h3>المكونات</h3><ul class="sfv-list">${o.ingredients.map((i) => `<li><i class="fas fa-check"></i> ${esc(i)}</li>`).join('')}</ul>` : ''}
       ${(o.items && o.items.length) ? `<h3>محتويات الصينية</h3><ul class="sfv-list">${o.items.map((i) => `<li><i class="fas fa-check"></i> ${esc(i)}</li>`).join('')}</ul>` : ''}
       <button type="button" class="btn btn-dark sfv-add" data-sfv-add><i class="fas fa-cart-plus"></i> أضف للسلة</button>`;
     return { src: imgUrl(o.image), alt: o.name, html, add: { kind, id: o.id, name: o.name, price: o.price, image: o.image || '' } };

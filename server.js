@@ -53,6 +53,10 @@ app.get(/^\/([a-z]+)(?:\.html)?$/, (req, res, next) => {
 
 
 // ---------------- helpers ----------------
+// المكونات بتتخزن JSON في عمود نصي — بنرجّعها للواجهة كمصفوفة
+const parseList = (v) => { try { const a = JSON.parse(v || '[]'); return Array.isArray(a) ? a : []; } catch (_) { return []; } };
+const normList = (v) => (Array.isArray(v) ? v : String(v || '').split(/\r?\n|،|,/)).map((x) => String(x).trim()).filter(Boolean).slice(0, 30);
+const dishOut = (r) => (r ? { ...r, ingredients: parseList(r.ingredients) } : r);
 const sign = (user) => jwt.sign({ id: user.id, role: user.role || 'USER' }, JWT_SECRET, { expiresIn: '7d' });
 const pubUser = (u) => ({ id: u.id, name: u.name, email: u.email, role: u.role || 'USER' });
 function authOptional(req, _res, next) {
@@ -107,7 +111,7 @@ app.get('/api/menu', async (req, res) => {
   if (category) { sql += ' AND category = ?'; p.push(category); }
   if (featured) sql += ' AND featured = 1';
   sql += ' ORDER BY featured DESC, id ASC';
-  res.json({ success: true, data: await db.prepare(sql).all(...p) });
+  res.json({ success: true, data: (await db.prepare(sql).all(...p)).map(dishOut) });
 });
 
 app.get('/api/menu/categories', async (_req, res) => {
@@ -231,27 +235,27 @@ app.put('/api/admin/orders/:id/status', adminRequired, async (req, res) => {
 });
 
 app.get('/api/admin/menu', adminRequired, async (_req, res) => {
-  res.json({ success: true, data: await db.prepare('SELECT * FROM menu_items ORDER BY id').all() });
+  res.json({ success: true, data: (await db.prepare('SELECT * FROM menu_items ORDER BY id').all()).map(dishOut) });
 });
 
 app.post('/api/admin/menu', adminRequired, async (req, res) => {
   const b = req.body || {};
   if (!b.name || !b.category || !b.price) return res.status(400).json({ success: false, message: 'الاسم والقسم والسعر مطلوبة' });
-  const r = await db.prepare('INSERT INTO menu_items (name, category, price, old_price, description, image, available, featured) VALUES (?,?,?,?,?,?,1,?)')
-    .run(b.name, b.category, Number(b.price), b.old_price ? Number(b.old_price) : null, b.description || '', b.image || '', b.featured ? 1 : 0);
-  res.status(201).json({ success: true, data: await db.prepare('SELECT * FROM menu_items WHERE id = ?').get(r.lastInsertRowid) });
+  const r = await db.prepare('INSERT INTO menu_items (name, category, price, old_price, description, ingredients, image, available, featured) VALUES (?,?,?,?,?,?,?,1,?)')
+    .run(b.name, b.category, Number(b.price), b.old_price ? Number(b.old_price) : null, b.description || '', JSON.stringify(normList(b.ingredients)), b.image || '', b.featured ? 1 : 0);
+  res.status(201).json({ success: true, data: dishOut(await db.prepare('SELECT * FROM menu_items WHERE id = ?').get(r.lastInsertRowid)) });
 });
 
 app.put('/api/admin/menu/:id', adminRequired, async (req, res) => {
   const b = req.body || {};
   const old = await db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.id);
   if (!old) return res.status(404).json({ success: false, message: 'غير موجود' });
-  await db.prepare('UPDATE menu_items SET name=?, category=?, price=?, description=?, image=?, available=?, featured=? WHERE id=?')
+  await db.prepare('UPDATE menu_items SET name=?, category=?, price=?, description=?, ingredients=?, image=?, available=?, featured=? WHERE id=?')
     .run(b.name ?? old.name, b.category ?? old.category, b.price != null ? Number(b.price) : old.price,
-      b.description ?? old.description, b.image ?? old.image,
+      b.description ?? old.description, b.ingredients === undefined ? old.ingredients : JSON.stringify(normList(b.ingredients)), b.image ?? old.image,
       b.available === undefined ? old.available : (b.available ? 1 : 0),
       b.featured === undefined ? old.featured : (b.featured ? 1 : 0), req.params.id);
-  res.json({ success: true, data: await db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.id) });
+  res.json({ success: true, data: dishOut(await db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.id)) });
 });
 
 app.delete('/api/admin/menu/:id', adminRequired, async (req, res) => {
