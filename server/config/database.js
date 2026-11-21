@@ -3,43 +3,82 @@
 // - محلياً: ملف SQLite عادي (stars_database.db)
 // - على الاستضافة: قاعدة Turso مجانية ودائمة (TURSO_DATABASE_URL + TURSO_AUTH_TOKEN)
 // ============================================================
-const { createClient } = require('@libsql/client');
+const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
+// نوع قاعدة البيانات (بالأولوية):
+//   1) DATABASE_URL  → Postgres / Supabase (دائمة — الموصى بيها)
+//   2) TURSO_DATABASE_URL → Turso (دائمة)
+//   3) ملف SQLite محلي (للتجربة على جهازك بس)
+const PG_URL = process.env.DATABASE_URL;
 const TURSO_URL = process.env.TURSO_DATABASE_URL;
-const PERSISTENT = !!TURSO_URL;
+const MODE = PG_URL ? 'postgres' : TURSO_URL ? 'turso' : 'sqlite';
+const PERSISTENT = MODE !== 'sqlite';
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', '..', 'stars_database.db');
+const DB_LABEL = MODE === 'postgres' ? 'Postgres / Supabase (دائمة)' : MODE === 'turso' ? 'Turso (دائمة)' : 'ملف SQLite محلي';
 
-const client = createClient(
-  PERSISTENT
-    ? { url: TURSO_URL, authToken: process.env.TURSO_AUTH_TOKEN }
-    : { url: 'file:' + DB_PATH }
-);
-
-const clean = (args) => args.map((a) => (a === undefined ? null : a));
-const rowsToObjects = (rs) => rs.rows.map((r) => Object.fromEntries(rs.columns.map((c, i) => [c, r[i]])));
-
-// نفس شكل prepare().get/all/run بس async (لازم await)
-const db = {
-  prepare(sql) {
-    return {
-      all: async (...args) => rowsToObjects(await client.execute({ sql, args: clean(args) })),
-      get: async (...args) => rowsToObjects(await client.execute({ sql, args: clean(args) }))[0],
-      run: async (...args) => {
-        const rs = await client.execute({ sql, args: clean(args) });
-        return { changes: rs.rowsAffected, lastInsertRowid: Number(rs.lastInsertRowid ?? 0) };
-      },
-    };
-  },
-  exec: (sql) => client.executeMultiple(sql),
-};
+let db;
+if (MODE === 'postgres') {
+  const { Pool, types } = require('pg');
+  types.setTypeParser(20, (v) => Number(v));    // COUNT(*) / bigint → رقم عادي
+  types.setTypeParser(1700, (v) => Number(v));  // SUM / numeric → رقم عادي
+  const pool = new Pool({
+    connectionString: PG_URL,
+    ssl: /localhost|127\.0\.0\.1/.test(PG_URL) ? false : { rejectUnauthorized: false },
+    max: Number(process.env.PG_POOL_MAX || 5),
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 15000,
+  });
+  pool.on('error', (e) => console.error('PG pool error:', e.message));
+  // ? → $1, $2 ... (بنتخطى أي ? جوه نص بين علامتين تنصيص)
+  const toPg = (sql) => { let n = 0, q = false; let out = ''; for (const ch of sql) { if (ch === "'") q = !q; out += (ch === '?' && !q) ? '$' + (++n) : ch; } return out; };
+  const clean = (args) => args.map((a) => (a === undefined ? null : a));
+  const exec1 = (sql, args) => pool.query(toPg(sql), clean(args));
+  db = {
+    prepare(sql) {
+      const isInsert = /^\s*INSERT\s/i.test(sql) && !/RETURNING/i.test(sql);
+      return {
+        all: async (...a) => (await exec1(sql, a)).rows,
+        get: async (...a) => (await exec1(sql, a)).rows[0],
+        run: async (...a) => {
+          const r = await exec1(isInsert ? sql + ' RETURNING id' : sql, a);
+          return { changes: r.rowCount, lastInsertRowid: isInsert && r.rows[0] ? Number(r.rows[0].id) : 0 };
+        },
+      };
+    },
+    exec: (sql) => pool.query(sql),
+    close: () => pool.end(),
+  };
+} else {
+  const { createClient } = require('@libsql/client');
+  const client = createClient(MODE === 'turso' ? { url: TURSO_URL, authToken: process.env.TURSO_AUTH_TOKEN } : { url: 'file:' + DB_PATH });
+  const clean = (args) => args.map((a) => (a === undefined ? null : a));
+  const rowsToObjects = (rs) => rs.rows.map((r) => Object.fromEntries(rs.columns.map((c, i) => [c, r[i]])));
+  // نفس شكل prepare().get/all/run بس async (لازم await)
+  db = {
+    prepare(sql) {
+      return {
+        all: async (...args) => rowsToObjects(await client.execute({ sql, args: clean(args) })),
+        get: async (...args) => rowsToObjects(await client.execute({ sql, args: clean(args) }))[0],
+        run: async (...args) => {
+          const rs = await client.execute({ sql, args: clean(args) });
+          return { changes: rs.rowsAffected, lastInsertRowid: Number(rs.lastInsertRowid ?? 0) };
+        },
+      };
+    },
+    exec: (sql) => client.executeMultiple(sql),
+    close: async () => {},
+  };
+}
 
 // الصور محلية جوه المشروع: assets/img/<id>.jpg (بتتحمّل مرة واحدة بالأمر: npm run images)
 const IMG = (id) => `/assets/img/${id}`;
 
 async function initDB() {
-  await db.exec(`
+  if (MODE === 'postgres') {
+    await db.exec(fs.readFileSync(path.join(__dirname, 'schema.pg.sql'), 'utf8'));
+  } else await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT, email TEXT UNIQUE, password TEXT,
@@ -100,7 +139,7 @@ async function initDB() {
     );
   `);
   // قواعد قديمة: أضف عمود وصف الصورة لو مش موجود
-  try { await db.exec('ALTER TABLE trays ADD COLUMN image_desc TEXT'); } catch (_) { /* العمود موجود بالفعل */ }
+  if (MODE !== 'postgres') { try { await db.exec('ALTER TABLE trays ADD COLUMN image_desc TEXT'); } catch (_) { /* العمود موجود بالفعل */ } }
   await seedAdmin();
   await seedMenu();
   await seedTrays();
@@ -185,13 +224,21 @@ async function seedTrays() {
   console.log(`🥘 تم إدخال ${TRAYS.length} صينية`);
 }
 
+// '-2 days' / '-8 hours' → وقت بصيغة YYYY-MM-DD HH:MM:SS (UTC)
+function agoToTs(ago) {
+  const m = /^-(\d+)\s*(day|days|hour|hours)$/.exec(ago) || [];
+  const ms = (Number(m[1]) || 0) * (String(m[2] || '').startsWith('day') ? 86400000 : 3600000);
+  return new Date(Date.now() - ms).toISOString().slice(0, 19).replace('T', ' ');
+}
+
 async function seedOrders() {
-  if (process.env.SEED_DEMO_ORDERS === 'false') return;
+  // الطلبات التجريبية للتجربة المحلية بس — على قاعدة دائمة (الحقيقية) مش بنضيفها إلا لو SEED_DEMO_ORDERS=true
+  if (PERSISTENT ? process.env.SEED_DEMO_ORDERS !== 'true' : process.env.SEED_DEMO_ORDERS === 'false') return;
   const c = (await db.prepare('SELECT COUNT(*) AS c FROM orders').get()).c;
   if (c > 0) return;
   const trays = await db.prepare('SELECT * FROM trays').all();
   const ins = db.prepare(`INSERT INTO orders (order_number, customer_name, phone, email, address, notes, items, total, payment_method, order_status, payment_status, created_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?, datetime('now', ?))`);
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`);
   const SAMPLES = [
     ['محمد عبد الله','01001234567','mohamed@gmail.com','المعادي، القاهرة','خالٍ من الفول السوداني','CONFIRMED','PAID','-2 days'],
     ['فاطمة السيد','01122334455','fatma@gmail.com','سموحة، الإسكندرية','','PENDING','PENDING','-1 days'],
@@ -205,7 +252,7 @@ async function seedOrders() {
   for (const [name, phone, email, address, notes, status, pay, ago] of SAMPLES) {
     const t = trays[Math.floor(Math.random() * trays.length)];
     const items = JSON.stringify([{ type: 'tray', id: t.id, name: t.name, price: t.price, qty: 1 }]);
-    await ins.run('ST-' + Math.random().toString(36).slice(2, 6).toUpperCase() + Date.now().toString().slice(-4), name, phone, email, address, notes, items, t.price, ['VODAFONE_CASH','CASH','VISA'][Math.floor(Math.random()*3)], status, pay, ago);
+    await ins.run('ST-' + Math.random().toString(36).slice(2, 6).toUpperCase() + Date.now().toString().slice(-4), name, phone, email, address, notes, items, t.price, ['VODAFONE_CASH','CASH','VISA'][Math.floor(Math.random()*3)], status, pay, agoToTs(ago));
   }
   console.log('🧾 تم إدخال 8 طلبات تجريبية');
 }
@@ -242,4 +289,4 @@ async function seedReviews() {
   console.log(`⭐ تم إدخال ${REVIEWS.length} تقييمات عملاء`);
 }
 
-module.exports = { db, initDB, PERSISTENT };
+module.exports = { db, initDB, PERSISTENT, MODE, DB_LABEL };

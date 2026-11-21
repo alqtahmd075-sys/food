@@ -11,7 +11,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
-const { db, initDB, PERSISTENT } = require('./server/config/database');
+const { db, initDB, PERSISTENT, MODE, DB_LABEL } = require('./server/config/database');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -190,7 +190,7 @@ app.get('/api/health', async (_req, res) => {
     dishes = (await db.prepare('SELECT COUNT(*) c FROM menu_items').get()).c;
     orders = (await db.prepare('SELECT COUNT(*) c FROM orders').get()).c;
   } catch (_) { dbOk = false; }
-  res.json({ ok: true, db: dbOk, persistent: PERSISTENT, dishes, orders, uptime: Math.round(process.uptime()) + 's', time: new Date().toISOString() });
+  res.json({ ok: true, db: dbOk, engine: MODE, persistent: PERSISTENT, dishes, orders, uptime: Math.round(process.uptime()) + 's', time: new Date().toISOString() });
 });
 
 // ---------------- ADMIN ----------------
@@ -285,8 +285,8 @@ initDB()
       console.log('=================================');
       console.log(`🚀 سيرفر مطعم النجوم شغال على: http://localhost:${PORT}`);
       console.log(PERSISTENT
-        ? '💾 قاعدة البيانات: Turso (دائمة — البيانات مش بتتمسح)'
-        : '⚠️ قاعدة البيانات: ملف محلي. على الاستضافة المجانية البيانات بتتمسح — فعّل Turso (راجع README)');
+        ? '💾 قاعدة البيانات: ' + DB_LABEL + ' — البيانات مش بتتمسح'
+        : '⚠️ قاعدة البيانات: ملف محلي (للتجربة بس). على الاستضافة لازم DATABASE_URL (Supabase) — راجع README');
       console.log('=================================');
     });
   })

@@ -5,6 +5,8 @@
   const API = (location.protocol.startsWith('http') && !location.protocol.includes('localhost') && location.hostname !== '127.0.0.1'
     ? '' : (location.origin.includes('localhost') || location.hostname === '127.0.0.1' ? '' : '')) + '/api';
 
+  // لو الواجهة على GitHub Pages والسيرفر على Render: حط رابط السيرفر في assets/config.js (SF_API_BASE)
+  const API_BASE = ((window.SF_API_BASE || '').replace(/\/+$/, '')) ? (window.SF_API_BASE.replace(/\/+$/, '') + '/') : '';
   const token = () => localStorage.getItem('sf_token');
   const FALLBACK = 'assets/placeholder.svg';
 
@@ -31,7 +33,7 @@
     if (token()) headers['Authorization'] = 'Bearer ' + token();
     const canStatic = (opts.method || 'GET').toUpperCase() === 'GET' && STATIC_PATHS.includes(path.split('?')[0]);
     let r;
-    try { r = await fetch('api' + path, { ...opts, headers }); }
+    try { r = await fetch(API_BASE + 'api' + path, { ...opts, headers }); }
     catch (e) { if (canStatic) return staticData(path); throw e; }
     if (canStatic && (r.status === 404 || r.status === 405 || r.status >= 500)) { try { return await staticData(path); } catch (_) {} }
     let d = {};
@@ -298,7 +300,7 @@
       box.innerHTML = `<div class="pay-panel">
         <h4><i class="fas fa-credit-card"></i> بيانات الفيزا / الماستركارد</h4>
         <div class="form-grid">
-          <div class="full"><label>الاسم على الكارت *</label><input id="cc_name" placeholder="AHMED MAHMOUD" autocomplete="cc-name" style="direction:ltr;text-transform:uppercase"></div>
+          <div class="full"><label>الاسم على الكارت *</label><input id="cc_name" placeholder="اكتب الاسم كما هو مكتوب على الكارت" autocomplete="cc-name"></div>
           <div class="full"><label>رقم الكارت *</label><input id="cc_num" inputmode="numeric" maxlength="23" placeholder="0000 0000 0000 0000" autocomplete="cc-number" style="direction:ltr"></div>
           <div><label>تاريخ الانتهاء *</label><input id="cc_exp" inputmode="numeric" maxlength="5" placeholder="MM/YY" autocomplete="cc-exp" style="direction:ltr"></div>
           <div><label>رمز الأمان CVV *</label><input id="cc_cvv" inputmode="numeric" maxlength="4" placeholder="123" autocomplete="cc-csc" style="direction:ltr"></div>

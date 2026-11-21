@@ -28,14 +28,26 @@ npm start
 الدخول من `/admin`. بيانات الأدمن مش مكتوبة في الموقع. الإيميل الافتراضي `admin@stars.com`، والباسورد متخزّن مشفّر في الكود.
 لتحديد بيانات تانية قبل أول تشغيل على قاعدة جديدة: `ADMIN_EMAIL` و `ADMIN_PASSWORD` (راجع `.env.example`).
 
-## 💾 قاعدة بيانات دائمة (Turso) — مهم على الاستضافة
-على الاستضافة المجانية (Render) ملف SQLite بيتمسح مع كل إعادة تشغيل، فالطلبات والحجوزات بتضيع. الحل: قاعدة **Turso** (فيه خطة مجانية — راجع turso.tech):
-1. سجّل في turso.tech (بحساب GitHub) وأنشئ قاعدة بيانات جديدة.
-2. انسخ **Database URL** (بيبدأ بـ `libsql://`) وأنشئ **Token** للقاعدة.
-3. في Render → الخدمة → **Environment** أضف:
-   - `TURSO_DATABASE_URL` = الرابط
-   - `TURSO_AUTH_TOKEN` = التوكن
-4. احفظ وانتظر إعادة النشر. في السجل (Logs) هتلاقي: `قاعدة البيانات: Turso (دائمة)`، وفي `/api/health` هتلاقي `"persistent": true`.
+## 💾 قاعدة البيانات الدائمة (Supabase) — فين بتروح الطلبات؟
+كل طلب / حجز / رسالة تواصل بيتخزن في **قاعدة بيانات Postgres على Supabase** (مشروع `stars-restaurant` على حسابك)، مش على السيرفر، فمفيش حاجة بتتمسح مع إعادة التشغيل.
+
+**إزاي تشوف الطلبات:**
+1. **لوحة الأدمن** `/admin` في الموقع: الطلبات (بالاسم والعنوان والتليفون والأصناف والإجمالي وطريقة الدفع) + الحجوزات + الرسائل، وتقدر تغيّر حالة الطلب.
+2. **لوحة Supabase** → Table Editor → جدول `orders` / `reservations` / `messages` (تقدر تعمل Export CSV وتفتحه في Excel).
+3. إيميل تنبيه بيوصل مع كل طلب جديد (عن طريق FormSubmit).
+
+**ربط السيرفر بالقاعدة (مرة واحدة):**
+1. Supabase → المشروع → **Connect** → *Transaction pooler* → انسخ الرابط (`postgresql://postgres.xxxx:[YOUR-PASSWORD]@...pooler.supabase.com:6543/postgres`) وحط مكان `[YOUR-PASSWORD]` باسورد القاعدة (لو نسيته: Project Settings → Database → Reset password).
+2. على Render → الخدمة → **Environment** أضف:
+   - `DATABASE_URL` = الرابط اللي فوق
+   - `ADMIN_EMAIL` و `ADMIN_PASSWORD` = بيانات دخولك للأدمن (اختار باسورد قوي)
+   - (`JWT_SECRET` بيتولّد تلقائياً من `render.yaml`)
+3. احفظ. في السجل (Logs) هتلاقي: `💾 قاعدة البيانات: Postgres / Supabase (دائمة)`، وفي `/api/health` هتلاقي `"engine":"postgres","persistent":true`.
+
+**لو الواجهة على GitHub Pages والسيرفر على Render:** افتح `assets/config.js` وحط رابط السيرفر في `SF_API_BASE`.
+
+> الجداول متأمّنة (RLS) فمفيش أي حد يقدر يقرأ بيانات العملاء من برّه — السيرفر بس هو اللي بيوصلها. الجداول موجودة في `server/config/schema.pg.sql`.
+> بدائل: `TURSO_DATABASE_URL` (Turso) أو ملف SQLite محلي للتجربة على جهازك بس.
 
 ## 🌐 النشر على Render
 1. ارفع المشروع على GitHub (**Public** أو Private).
