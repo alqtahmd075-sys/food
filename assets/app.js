@@ -45,7 +45,7 @@
   const fmt = (n) => Number(n || 0).toLocaleString('ar-EG') + ' ج.م';
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   // امتداد كل صورة موجودة في assets/img — عشان الروابط تبقى مباشرة وبتشتغل على GitHub Pages من غير سيرفر
-  const IMG_FILES = {"enmlJPPk81nSE9zW":".avif","7qmfBsmprwGVdAjt":".jpg","FZBwmx5QmOg3Ydnh":".avif","WQYisSNrHR0b9mBP":".jpg","1euWXOTlKPEklumC":".jpg","CdXi3kDib6fMBcpK":".avif","7cR5OS6o20HvBHXV":".jpg","GfB8M68XIdiFMlMc":".jpg","HQ28omk0dfzddrA7":".avif","3fYIzYW9Y5pPaio8":".jpg","DRWiUMvJlJy4nvWS":".avif","1rvYkmtQWTT9kOmg":".jpg","seafood-mixed-platter":".jpg","m8pjRekKYf29HQMQ":".jpg","lOGfSq11TSOwJ50j":".avif","wMBHrKbeWSpN5YRQ":".jpg","JTD7S0oELlHsuUmm":".avif","F7Obo8fXauXeZskS":".avif","HbohWI5w5AbGcPAu":".jpg","YkZBVsAO0Z6u9Mh2":".jpg","nJslmLzWMCop7BSf":".jpg","YsdWmuuNWqHqnJJR":".jpg","LPkWQNdUHda6Rvxb":".jpg","68XCf2g9GsLYVz75":".jpg","shrimp-family-offer":".jpg","19I4VPwRIgvRdpbh":".jpg","oa9cqyhA2F8e0QKW":".avif","king-crab":".jpg","grilled-octopus":".jpg","oysters":".jpg","mussels-cream":".jpg","shrimp-tempura":".jpg"};
+  const IMG_FILES = {"enmlJPPk81nSE9zW":".avif","7qmfBsmprwGVdAjt":".jpg","FZBwmx5QmOg3Ydnh":".avif","WQYisSNrHR0b9mBP":".jpg","1euWXOTlKPEklumC":".jpg","CdXi3kDib6fMBcpK":".avif","7cR5OS6o20HvBHXV":".jpg","GfB8M68XIdiFMlMc":".jpg","HQ28omk0dfzddrA7":".avif","3fYIzYW9Y5pPaio8":".jpg","DRWiUMvJlJy4nvWS":".avif","1rvYkmtQWTT9kOmg":".jpg","salmon-teriyaki":".jpg","seafood-paella":".jpg","m8pjRekKYf29HQMQ":".jpg","lOGfSq11TSOwJ50j":".avif","wMBHrKbeWSpN5YRQ":".jpg","JTD7S0oELlHsuUmm":".avif","F7Obo8fXauXeZskS":".avif","YkZBVsAO0Z6u9Mh2":".jpg","nJslmLzWMCop7BSf":".jpg","YsdWmuuNWqHqnJJR":".jpg","LPkWQNdUHda6Rvxb":".jpg","68XCf2g9GsLYVz75":".jpg","shrimp-family-offer":".jpg","19I4VPwRIgvRdpbh":".jpg","oa9cqyhA2F8e0QKW":".avif","king-crab":".jpg","grilled-octopus":".jpg","oysters":".jpg","mussels-cream":".jpg","shrimp-tempura":".jpg"};
   const img = (u) => {
     if (!u) return FALLBACK;
     const m = String(u).match(/^\/?assets\/img\/([A-Za-z0-9_-]+)(\.[a-z0-9]+)?$/i);
@@ -511,7 +511,7 @@
     '/assets/img/oysters',
     '/assets/img/mussels-cream',
     '/assets/img/shrimp-tempura',
-    '/assets/img/seafood-mixed-platter',
+    '/assets/img/seafood-paella',
     '/assets/img/shrimp-family-offer',
     '/assets/img/YsdWmuuNWqHqnJJR',
     '/assets/img/68XCf2g9GsLYVz75',
@@ -533,7 +533,7 @@
     '/assets/img/enmlJPPk81nSE9zW',
     '/assets/img/FZBwmx5QmOg3Ydnh',
     '/assets/img/DRWiUMvJlJy4nvWS',
-    '/assets/img/HbohWI5w5AbGcPAu',
+    '/assets/img/salmon-teriyaki',
     '/assets/img/lOGfSq11TSOwJ50j',
     '/assets/img/F7Obo8fXauXeZskS',
     '/assets/img/JTD7S0oELlHsuUmm',
